@@ -308,12 +308,11 @@ async function generateAiSummary(query, container) {
   actionsContainer.appendChild(claudeBtn);
   analysisWrapper.insertBefore(actionsContainer, summaryBox);
 
-  // Call AI deep analysis
+  // Call AI deep analysis via background script
   try {
-    const res = await fetch('http://localhost:3002/api/token/profile/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const result = await chrome.runtime.sendMessage({
+      type: 'AI_ANALYZE',
+      payload: {
         // Directly send cleaned strings
         tweets: cleanData(optimizedTweets),
         searchResults: cleanData(optimizedSearchResults),
@@ -322,10 +321,10 @@ async function generateAiSummary(query, container) {
         tokenDescription: cleanData(tokenDescObj),
         forceUpdate: false,
         language: currentLang
-      })
+      }
     });
-    const result = await res.json();
-    if (result.data && result.data.result) {
+
+    if (result.success && result.data && result.data.result) {
       renderAiAnalysisUI(summaryBox, result.data);
     } else if (result.data && (result.data.chinese || result.data.english)) {
       renderAiAnalysisUI(summaryBox, { result: result.data.chinese || result.data.english });

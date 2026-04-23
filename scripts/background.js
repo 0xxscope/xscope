@@ -1,6 +1,7 @@
 // background.js
 importScripts('../services/query-id-resolver.js');
 importScripts('../services/token-service.js');
+importScripts('../services/ai-service.js');
 // Target tweet count to fetch
 // const TARGET_TWEET_COUNT = 50; 
 const MAX_REQUESTS = 10;
@@ -132,23 +133,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // 👇 New listener for fetching AI analysis
+  // 👇 New listener for fetching AI analysis locally without a server
   if (request.type === 'AI_ANALYZE') {
-    fetch('http://localhost:3002/api/token/profile/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request.payload)
-    })
-    .then(res => res.json())
-    .then(data => {
+    AI_SERVICE.handleAiAnalyzeRequest(request.payload).then(data => {
       sendResponse({ success: true, data: data });
-    })
-    .catch(err => {
+    }).catch(err => {
       sendResponse({ success: false, error: err.message });
     });
-    
-    // Must return true to indicate an asynchronous response
-    return true; 
+    return true;
   }
 });
 

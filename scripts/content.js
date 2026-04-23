@@ -195,7 +195,6 @@ window.addEventListener('message', (event) => {
         const query = event.data.query;
         const scope = event.data.scope || 'web';
 
-        // 👇 优先读取网页传的值(向前兼容)，若网页未传(如上述 page.tsx 的修改)，则去插件存储中读取用户真实配置
         chrome.storage.local.get({
             clawalpha_max_tweets: 50,
             clawalpha_search_type: 'Latest'
