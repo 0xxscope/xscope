@@ -6,7 +6,7 @@ const AI_SERVICE = {
    */
   async handleAiAnalyzeRequest(payload) {
     try {
-      const res = await fetch('http://localhost:3002/api/token/profile/analyze', {
+      const res = await fetch('https://frenmap.fun/api/token/profile/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -22,7 +22,7 @@ const AI_SERVICE = {
       // This maintains structural consistency with the prior frontend implementation, allowing the popup to seamlessly read `result.data.result`
       return responseData.data || responseData;
     } catch (err) {
-      console.error("[AI] API request to 3002 server failed:", err);
+      console.error("[AI] API request to frenmap server failed:", err);
       throw err;
     }
   }

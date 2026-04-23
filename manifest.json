@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "XScope",
   "version": "1.3",
-  "description": "X search plugin based on the logic of the bird project",
+  "description": "AI token & X profile analyzer",
   "icons": {
     "16": "assets/bg.png",
     "48": "assets/bg.png",
