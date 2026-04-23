@@ -135,10 +135,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // 👇 New listener for fetching AI analysis locally without a server
   if (request.type === 'AI_ANALYZE') {
-    AI_SERVICE.handleAiAnalyzeRequest(request.payload).then(data => {
-      sendResponse({ success: true, data: data });
-    }).catch(err => {
-      sendResponse({ success: false, error: err.message });
+    // Determine language: priority is request.payload.language -> stored setting -> 'en'
+    chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
+      const payload = { ...request.payload };
+      if (!payload.language) {
+        payload.language = items.clawalpha_lang;
+      }
+
+      AI_SERVICE.handleAiAnalyzeRequest(payload).then(data => {
+        sendResponse({ success: true, data: data });
+      }).catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
     });
     return true;
   }
