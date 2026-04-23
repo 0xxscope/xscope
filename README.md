@@ -1,42 +1,62 @@
-# XScope - Twitter Intelligence Extension
+# XScope - The Ultimate Twitter & Crypto Intelligence Extension
 
-XScope is a powerful browser extension designed to help cryto traders and social media analysts deep-dive into project narratives and KOL identities directly within X (Twitter), Gemini, ChatGPT, and Claude.
+XScope is a premium browser extension designed for crypto traders, researchers, and social media analysts. It provides deep narrative analysis, KOL tracking, and real-time token insights by bridging X (Twitter) with modern AI platforms and on-chain data.
 
-## Features
+## 🚀 Key Features
 
+### 1. Narrative & Social Intelligence
 - **Project Narrative Analysis**: Instantly summarize the main narrative, timeline, and key events of any search query or token address.
-- **Multi-Platform AI Automation**: Automatically inject prompts and analyzed data into **Gemini**, **ChatGPT**, and **Claude** with one click.
-- **Real-time Token Insights**: Integrated with Dexscreener to provide live token info (Price, MC, FDV, Liquidity, Social Links) for any contract address.
-- **KOL lookup**: Quickly view recent tweets and basic info for any user encountered in the interface.
-- **Flexible Data Export**: Export analyzed tweets and project data as clean JSON files.
-- **Smart i18n System**: Native support for **English**, **Simplified Chinese**, **Spanish**, **German**, **Japanese**, and **Korean**.
-- **Customizable Experience**: 
-  - Adjustable tweet crawl limits (Default: 50).
-  - Customizable global AI prompt template.
-  - Sidepanel and Popup support for multi-tasking.
+- **KOL Deep-Dive**: Quickly fetch and analyze user profiles, including recent tweets and basic info.
+- **Relationship Tracking**: Fetch follower/following lists using advanced v1.1 API integration to bypass GraphQL limitations.
+- **Smart Data Export**: Export analyzed tweets and project data as clean, structured JSON files for further research.
 
-## Tech Stack
+### 2. Multi-Platform AI Synergy
+- **One-Click Automation**: Automatically inject analyzed context and custom prompts into **Gemini**, **ChatGPT**, and **Claude**.
+- **Custom AI Endpoints**: Connect your own OpenAI-compatible API (e.g., GPT-4o, Claude 3.5) for private, high-speed analysis.
+- **Smart Prompt Templates**: Fully customizable global AI prompt templates to tailor the analysis to your specific needs.
 
-- **Frontend**: HTML5, Vanilla CSS (Premium Dark Mode UI), JavaScript.
-- **Communication**: Chrome Extension API (Message Passing, Storage).
-- **External APIs**: Dexscreener (Token Info), Twitter search endpoints.
+### 3. Integrated Trading Workflow
+- **Real-time Token Insights**: Integrated with **Dexscreener** to provide live price, market cap, liquidity, and social links for any contract address.
+- **Native Platform Support**: Injected interface and analysis tools on top-tier trading platforms:
+  - **GMGN.ai**, **BullX (neo.bullx.io)**, **Axiom.trade**, **xxyy.io**
+  - **Binance Web3**, **OKX Web3**, **Photon**, **Dexscreener**
+- **Floating UI**: A draggable, sleek floating button allows you to access the analysis panel instantly on any supported site without switching tabs.
 
-## Installation
+### 4. Premium User Experience
+- **Sleek Sidepanel**: Utilizes the modern Chrome Side Panel API for a non-intrusive, multitasking experience.
+- **Multi-tasking Support**: Parallel search execution (Main Search vs. Silent Background fetching).
+- **Internationalization (i18n)**: Native support for English, Simplified Chinese (简体中文), Spanish, German, Japanese, and Korean.
+- **Developer Mode Fallback**: Dynamic Query ID resolution ensures the extension stays functional even when Twitter updates its internal API.
+
+## 🛠 Tech Stack
+
+- **Framework**: Chrome Extension Manifesto V3 (MV3).
+- **UI**: Vanilla HTML5/CSS3 with a premium dark-mode aesthetic.
+- **Logic**: Asynchronous JavaScript (ES6+), Chrome Storage API, Messaging API.
+- **Services**: 
+  - **Dexscreener API** for token metadata.
+  - **X (Twitter) GraphQL & REST v1.1** for social data.
+  - **OpenAI-Compatible APIs** for custom intelligence.
+
+## 📦 Installation
 
 1. Clone or download this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** (top right).
 4. Click **Load unpacked** and select the `/bird` directory.
 
-## Configuration
+## ⚙️ Configuration
 
 Click the **Gear icon** in the extension to access System Settings:
-- **Max Crawl Count**: Set how many tweets to fetch per search.
-- **AI Prompt Template**: Define your own summary instructions for the AI.
-- **Language**: Switch between supported languages.
+- **Max Crawl Count**: Adjust how many tweets to fetch per search (default: 50).
+- **Search Type**: Toggle between "Latest" and "Top" tweets.
+- **Custom AI Provider**: Enable custom API endpoints, set your API key, and select preferred models.
+- **Floating Button**: Toggle the visibility of the on-page floating analysis button.
 
-## Note
-This extension relies on being logged into X.com for tweet fetching. Some advanced analysis features may require the backend service to be running at `http://localhost:3002`.
+## ⚠️ Notes
+
+- This extension requires an active session on **X.com** to fetch social data.
+- For the best experience, ensure you are logged in to your preferred AI platforms (Gemini/ChatGPT/Claude) if using the one-click automation feature.
 
 ---
-*Built for the next generation of crypto-native intelligence.*
+*XScope: Empowering the next generation of crypto-native intelligence.*
