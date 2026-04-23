@@ -35,7 +35,9 @@
     "http://127.0.0.1:*/*",
     "https://gemini.google.com/*",
     "https://chatgpt.com/*",
-    "https://claude.ai/*"
+    "https://claude.ai/*",
+    "https://axiom.trade/*",
+    "https://www.xxyy.io/*"
   ],
   "declarative_net_request": {
     "rule_resources": [
@@ -66,7 +68,9 @@
         "http://127.0.0.1:*/*",
         "https://gemini.google.com/*",
         "https://chatgpt.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://axiom.trade/*",
+        "https://www.xxyy.io/*"
       ],
       "js": [
         "scripts/content.js"
@@ -105,7 +109,9 @@
         "http://127.0.0.1:*/*",
         "https://gemini.google.com/*",
         "https://chatgpt.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://axiom.trade/*",
+        "https://www.xxyy.io/*"
       ]
     }
   ]
