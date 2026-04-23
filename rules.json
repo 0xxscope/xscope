@@ -1,0 +1,20 @@
+[
+    {
+      "id": 1,
+      "priority": 1,
+      "action": {
+        "type": "modifyHeaders",
+        "requestHeaders": [
+          { "header": "Origin", "operation": "set", "value": "https://x.com" },
+          { "header": "Referer", "operation": "set", "value": "https://x.com/" },
+          { "header": "x-twitter-active-user", "operation": "set", "value": "yes" },
+          { "header": "x-twitter-auth-type", "operation": "set", "value": "OAuth2Session" },
+          { "header": "x-twitter-client-language", "operation": "set", "value": "en" }
+        ]
+      },
+      "condition": {
+        "urlFilter": "x.com",
+        "resourceTypes": ["xmlhttprequest"]
+      }
+    }
+  ]

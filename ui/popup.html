@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>XScope</title>
+  <style>
+    /* === Global Variables (Dark Mode) === */
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #16181c;
+      --text-primary: #e7e9ea;
+      --text-secondary: #71767b;
+      --border-color: #2f3336;
+      --accent-blue: #1d9bf0;
+      --accent-hover: #1a8cd8;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 380px;
+      height: 600px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+
+    /* === Header === */
+    .header {
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Ensures vertical centering */
+    }
+
+    /* Title Styling */
+    h2 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 19px;
+      /* Slightly larger for better weight */
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      /* Vertically align logo and text */
+      gap: 8px;
+      /* Space between logo and text */
+      line-height: 1;
+      /* Fix alignment issues */
+    }
+
+    /* New Logo Styling */
+    .app-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      /* Circular logo */
+      object-fit: cover;
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    select {
+      background-color: transparent;
+      color: var(--accent-blue);
+      border: none;
+      padding: 6px 24px 6px 8px;
+      border-radius: 8px;
+      outline: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231d9bf0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 4px center;
+    }
+
+    select:hover {
+      background-color: rgba(29, 155, 240, 0.1);
+    }
+
+    .btn {
+      padding: 6px 16px;
+      background-color: var(--text-primary);
+      color: black;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .search-input-container {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      box-sizing: border-box;
+      background-color: var(--bg-secondary);
+      border: 1px solid transparent;
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: 9999px;
+      outline: none;
+      font-size: 15px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    input:focus {
+      background-color: black;
+      border-color: var(--accent-blue);
+    }
+
+    input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    /* === Status Bar === */
+    #status-bar {
+      font-size: 13px;
+      color: var(--accent-blue);
+      padding: 0 16px 8px 16px;
+      text-align: center;
+      flex-shrink: 0;
+      min-height: 18px;
+      display: none;
+      margin-top: 12px;
+    }
+
+    #results {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) var(--bg-primary);
+    }
+
+    #results::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #results::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    #results::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 4px;
+    }
+
+    /* === Tweet Card === */
+    .tweet-card {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.2s;
+      cursor: default;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tweet-card:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .avatar {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--bg-secondary);
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.2s, filter 0.2s;
+    }
+
+    .avatar:hover {
+      opacity: 0.85;
+      filter: brightness(1.2);
+    }
+
+    .tweet-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tweet-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+      font-size: 15px;
+      line-height: 20px;
+    }
+
+    .tweet-user-info {
+      display: flex;
+      gap: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .tweet-author-name {
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tweet-screen-name {
+      color: var(--text-secondary);
+      font-weight: 400;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tweet-date {
+      color: var(--text-secondary);
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-left: 4px;
+    }
+
+    .tweet-text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .tweet-text a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    .tweet-text a:hover {
+      text-decoration: underline;
+    }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 12px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+      text-decoration: none;
+      color: var(--text-secondary);
+    }
+
+    .stat-item svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+    }
+
+    .stat-item.likes:hover {
+      color: #f91880;
+    }
+
+    .stat-item.retweets:hover {
+      color: #00ba7c;
+    }
+
+    .stat-item.open-link:hover {
+      color: var(--accent-blue);
+    }
+
+    .error {
+      color: #f4212e;
+      text-align: center;
+      padding: 20px;
+      font-weight: bold;
+    }
+
+    .empty {
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    /* === Modal & User List Styles === */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+    }
+
+    .modal-content {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 85%;
+      background: var(--bg-primary);
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #2f3336;
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+
+    .user-list-item {
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .user-list-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .loading-trigger {
+      text-align: center;
+      padding: 20px;
+      color: var(--accent-blue);
+      font-size: 14px;
+    }
+
+    /* === Token Action Buttons === */
+    .token-action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .token-action-btn:hover {
+      background: #2f3336;
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .token-action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="header-top">
+      <h2>
+        <img src="../assets/bg.png" class="app-logo" alt="Logo" />
+      </h2>
+      <div class="actions">
+        <select id="lang-switch">
+          <option value="zh">中文</option>
+          <option value="en" selected>English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+        </select>
+        <select id="search-type">
+          <option value="Top">Top</option>
+          <option value="Latest">Latest</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="search-input-container">
+      <input type="text" id="query" placeholder="Search X..." autocomplete="off" />
+      <button id="btn-search" class="btn"
+        style="padding: 0 14px; display: flex; align-items: center; justify-content: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="status-bar"></div>
+  <div id="results"></div>
+
+  <!-- Settings Modal (Added settings popup) -->
+  <div id="settings-modal" class="modal-overlay" style="z-index: 200;">
+    <div class="modal-content" style="bottom: 0; width: 100%; height: 85%; border-radius: 16px 16px 0 0; margin: 0;">
+      <div class="modal-header">
+        <span style="font-size: 16px;" id="setting-title">⚙️ System Settings</span>
+        <div class="modal-close" id="settings-close">✕</div>
+      </div>
+      <div class="modal-body" style="padding: 16px; overflow: visible;">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;"
+            id="setting-max-tweets-label">Max tweets to fetch:</label>
+          <input type="number" id="setting-max-tweets" value="50" min="10" max="200"
+            style="width: 100%; box-sizing: border-box;" />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;"
+            id="setting-prompt-label">AI Prompt Template:</label>
+          <textarea id="setting-prompt"
+            style="width: 100%; height: 100px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; outline: none; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        <button id="setting-save-btn" class="btn"
+          style="width: 100%; padding: 12px; font-size: 15px; background-color: var(--accent-blue); color: white;">Save
+          Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../scripts/i18n.js"></script>
+  <script src="../services/token-service.js"></script>
+  <script src="popup-components.js"></script>
+  <script src="popup.js"></script>
+</body>
+
+</html>

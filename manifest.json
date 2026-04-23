@@ -1,0 +1,109 @@
+{
+  "manifest_version": 3,
+  "name": "XScope",
+  "version": "1.3",
+  "description": "X search plugin based on the logic of the bird project",
+  "icons": {
+    "16": "assets/bg.png",
+    "48": "assets/bg.png",
+    "128": "assets/bg.png"
+  },
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_icon": "assets/bg.png"
+  },
+  "permissions": [
+    "cookies",
+    "declarativeNetRequest",
+    "sidePanel",
+    "contextMenus",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://x.com/*",
+    "http://localhost:3002/*",
+    "http://127.0.0.1:3002/*",
+    "https://gmgn.ai/*",
+    "https://web3.binance.com/*",
+    "https://neo.bullx.io/*",
+    "https://web3.okx.com/*",
+    "https://photon-sol.tinyastro.io/*",
+    "https://debot.ai/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*",
+    "https://gemini.google.com/*",
+    "https://chatgpt.com/*",
+    "https://claude.ai/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "side_panel": {
+    "default_path": "ui/sidepanel.html"
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gmgn.ai/*",
+        "https://web3.binance.com/*",
+        "https://neo.bullx.io/*",
+        "https://web3.okx.com/*",
+        "https://photon-sol.tinyastro.io/*",
+        "https://debot.ai/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*",
+        "https://gemini.google.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "scripts/content.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "scripts/i18n.js",
+        "scripts/gemini.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ui/sidepanel.html",
+        "assets/bg.png",
+        "ui/popup.js",
+        "ui/popup-components.js",
+        "services/token-service.js"
+      ],
+      "matches": [
+        "https://gmgn.ai/*",
+        "https://web3.binance.com/*",
+        "https://neo.bullx.io/*",
+        "https://web3.okx.com/*",
+        "https://photon-sol.tinyastro.io/*",
+        "https://debot.ai/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*",
+        "https://gemini.google.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+      ]
+    }
+  ]
+}
