@@ -5,7 +5,7 @@ const floatingBtn = document.createElement('div');
 floatingBtn.id = 'clawalpha-floating-btn';
 // Insert the logo image from the extension, and set pointer-events: none to prevent drag artifacts
 floatingBtn.innerHTML = `
-  <img src="${chrome.runtime.getURL('assets/bg.png')}" alt="XScope" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; display: block; pointer-events: none;">
+  <img src="${chrome.runtime.getURL('assets/bg.png')}" alt="XScope" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; pointer-events: none;">
 `;
 
 // Set floating button styles
