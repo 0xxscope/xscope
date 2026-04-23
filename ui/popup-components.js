@@ -505,19 +505,72 @@ const settingsModal = document.getElementById('settings-modal');
 const settingsClose = document.getElementById('settings-close');
 const settingMaxTweetsInput = document.getElementById('setting-max-tweets');
 const settingPromptInput = document.getElementById('setting-prompt');
+const settingCustomAiEnabled = document.getElementById('setting-custom-ai-enabled');
+const customAiFields = document.getElementById('custom-ai-fields');
+const settingApiUrlInput = document.getElementById('setting-api-url');
+const settingApiKeyInput = document.getElementById('setting-api-key');
+const settingModelInput = document.getElementById('setting-model');
 const settingSaveBtn = document.getElementById('setting-save-btn');
 
 // Make Logo cursor a pointer on hover
 if (appLogo) appLogo.style.cursor = 'pointer';
 
+// Toggle custom AI fields visibility
+if (settingCustomAiEnabled) {
+  settingCustomAiEnabled.addEventListener('change', (e) => {
+    customAiFields.style.display = e.target.checked ? 'block' : 'none';
+  });
+}
+
+// Global click delegation for presets
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.preset-btn');
+  if (btn) {
+    const presetId = btn.dataset.id;
+    if (presetId && typeof AI_PRESETS !== 'undefined' && AI_PRESETS[presetId]) {
+      const preset = AI_PRESETS[presetId];
+      if (settingApiUrlInput) settingApiUrlInput.value = preset.apiUrl;
+      if (settingModelInput) settingModelInput.value = preset.model;
+    }
+  }
+});
+
+// Build preset buttons dynamically from AI_PRESETS
+function renderPresets() {
+  const container = document.getElementById('preset-container');
+  if (!container || typeof AI_PRESETS === 'undefined') return;
+  
+  container.innerHTML = '';
+  Object.keys(AI_PRESETS).forEach(id => {
+    const preset = AI_PRESETS[id];
+    const btn = document.createElement('div');
+    btn.className = 'preset-btn';
+    btn.dataset.id = id;
+    btn.title = preset.name;
+    const shortName = preset.name.split(' ')[0]; // Use first word as button text
+    btn.textContent = shortName;
+    container.appendChild(btn);
+  });
+}
+
 // Load current settings
 function loadSettings() {
+  renderPresets(); // Ensure buttons are rendered when opening settings
   chrome.storage.local.get({
     clawalpha_max_tweets: DEFAULT_MAX_TWEETS,
-    clawalpha_prompt: I18N[currentLang].defaultAiPrompt
+    clawalpha_prompt: I18N[currentLang].defaultAiPrompt,
+    clawalpha_custom_ai_enabled: false,
+    clawalpha_api_url: '',
+    clawalpha_api_key: '',
+    clawalpha_model: ''
   }, (items) => {
     settingMaxTweetsInput.value = items.clawalpha_max_tweets;
     settingPromptInput.value = items.clawalpha_prompt;
+    settingCustomAiEnabled.checked = items.clawalpha_custom_ai_enabled;
+    customAiFields.style.display = items.clawalpha_custom_ai_enabled ? 'block' : 'none';
+    settingApiUrlInput.value = items.clawalpha_api_url;
+    settingApiKeyInput.value = items.clawalpha_api_key;
+    settingModelInput.value = items.clawalpha_model;
   });
 }
 
@@ -540,11 +593,19 @@ if (settingsClose) {
 if (settingSaveBtn) {
   settingSaveBtn.addEventListener('click', () => {
     const newMaxTweets = parseInt(settingMaxTweetsInput.value) || DEFAULT_MAX_TWEETS;
-    const newPrompt = settingPromptInput.value.trim() || DEFAULT_PROMPT;
+    const newPrompt = settingPromptInput.value.trim();
+    const isCustomAi = settingCustomAiEnabled.checked;
+    const apiUrl = settingApiUrlInput.value.trim();
+    const apiKey = settingApiKeyInput.value.trim();
+    const modelName = settingModelInput.value.trim();
 
     chrome.storage.local.set({
       clawalpha_max_tweets: newMaxTweets,
-      clawalpha_prompt: newPrompt
+      clawalpha_prompt: newPrompt,
+      clawalpha_custom_ai_enabled: isCustomAi,
+      clawalpha_api_url: apiUrl,
+      clawalpha_api_key: apiKey,
+      clawalpha_model: modelName
     }, () => {
       settingSaveBtn.textContent = I18N[currentLang].saveSuccess;
       setTimeout(() => {

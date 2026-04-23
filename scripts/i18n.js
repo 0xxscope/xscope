@@ -44,6 +44,10 @@ const I18N = {
     aiPromptTemplate: 'AI Prompt Template:',
     saveSettings: 'Save Settings',
     saveSuccess: 'Saved successfully!',
+    customAiLabel: 'Enable Custom AI Analysis',
+    apiUrlLabel: 'API URL:',
+    apiKeyLabel: 'API Key:',
+    modelLabel: 'Model Name:',
     defaultAiPrompt: 'Summarize the main narrative of this project, including specific timelines and key information (e.g. key figure backgrounds, key events), and exclude invalid information.',
     copySuccess: '✅ Copied to clipboard! Press Ctrl+V (or Cmd+V) to paste into AI.',
     locale: 'en-US'
@@ -93,6 +97,10 @@ const I18N = {
     aiPromptTemplate: 'AI 提示词模板:',
     saveSettings: '保存设置',
     saveSuccess: '保存成功！',
+    customAiLabel: '启用自定义 AI 分析',
+    apiUrlLabel: 'API 地址:',
+    apiKeyLabel: 'API 密钥:',
+    modelLabel: '模型名称:',
     defaultAiPrompt: '总结一下这个项目的主要叙事，包括具体的时间线和关键信息(比如关键人物背景、关键事件)，排除掉无效的信息',
     copySuccess: '✅ 已复制到剪贴板！请按 Ctrl+V (或 Cmd+V) 粘贴给 AI',
     locale: 'zh-CN'

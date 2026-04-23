@@ -31,6 +31,16 @@ function updateUI() {
   if (settingTitle) settingTitle.textContent = I18N[currentLang].systemSettings;
   const settingMaxTweetsLabel = document.getElementById('setting-max-tweets-label');
   if (settingMaxTweetsLabel) settingMaxTweetsLabel.textContent = I18N[currentLang].maxTweetsLimit;
+  
+  const settingCustomAiLabel = document.getElementById('setting-custom-ai-label');
+  if (settingCustomAiLabel) settingCustomAiLabel.textContent = I18N[currentLang].customAiLabel;
+  const settingApiUrlLabel = document.getElementById('setting-api-url-label');
+  if (settingApiUrlLabel) settingApiUrlLabel.textContent = I18N[currentLang].apiUrlLabel;
+  const settingApiKeyLabel = document.getElementById('setting-api-key-label');
+  if (settingApiKeyLabel) settingApiKeyLabel.textContent = I18N[currentLang].apiKeyLabel;
+  const settingModelLabel = document.getElementById('setting-model-label');
+  if (settingModelLabel) settingModelLabel.textContent = I18N[currentLang].modelLabel;
+
   const settingPromptLabel = document.getElementById('setting-prompt-label');
   if (settingPromptLabel) settingPromptLabel.textContent = I18N[currentLang].aiPromptTemplate;
   const settingSaveBtn = document.getElementById('setting-save-btn');

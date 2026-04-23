@@ -398,6 +398,55 @@
       color: var(--accent-blue);
       font-size: 14px;
     }
+    /* === Modern Switch Toggle === */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #333;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #fff;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
   </style>
 </head>
 
@@ -444,28 +493,66 @@
     <div class="modal-content" style="bottom: 0; width: 100%; height: 85%; border-radius: 16px 16px 0 0; margin: 0;">
       <div class="modal-header">
         <span style="font-size: 16px;" id="setting-title">⚙️ System Settings</span>
-        <div class="modal-close" id="settings-close">✕</div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="setting-save-btn" class="btn"
+            style="padding: 4px 12px; font-size: 12px; background-color: var(--accent-blue); color: white;">Save</button>
+          <div class="modal-close" id="settings-close">✕</div>
+        </div>
       </div>
-      <div class="modal-body" style="padding: 16px; overflow: visible;">
+      <div class="modal-body" style="padding: 16px; overflow-y: auto;">
         <div style="margin-bottom: 16px;">
           <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;"
             id="setting-max-tweets-label">Max tweets to fetch:</label>
           <input type="number" id="setting-max-tweets" value="50" min="10" max="200"
             style="width: 100%; box-sizing: border-box;" />
         </div>
+
+        <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+           <label style="font-size: 14px; font-weight: bold;" id="setting-custom-ai-label">Enable Custom AI:</label>
+           <label class="switch">
+             <input type="checkbox" id="setting-custom-ai-enabled">
+             <span class="slider"></span>
+           </label>
+        </div>
+
+        <div id="custom-ai-fields" style="display: none; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 16px; background: rgba(255,255,255,0.02);">
+          <div id="preset-container" style="margin-bottom: 12px; display: flex; gap: 4px; flex-wrap: wrap;">
+             <!-- Preset buttons will be generated here -->
+          </div>
+          <style>
+             .preset-btn {
+               font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-secondary);
+               transition: all 0.2s;
+             }
+             .preset-btn:hover {
+               background: rgba(29, 155, 240, 0.1); border-color: var(--accent-blue); color: var(--accent-blue);
+             }
+          </style>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);" id="setting-api-url-label">API URL:</label>
+            <input type="text" id="setting-api-url" placeholder="https://..." style="width: 100%; box-sizing: border-box; font-size: 13px; padding: 6px 12px;" />
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);" id="setting-api-key-label">API Key:</label>
+            <input type="password" id="setting-api-key" placeholder="sk-..." style="width: 100%; box-sizing: border-box; font-size: 13px; padding: 6px 12px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);" id="setting-model-label">Model Name:</label>
+            <input type="text" id="setting-model" placeholder="gpt-4o" style="width: 100%; box-sizing: border-box; font-size: 13px; padding: 6px 12px;" />
+          </div>
+        </div>
+
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;"
             id="setting-prompt-label">AI Prompt Template:</label>
           <textarea id="setting-prompt"
             style="width: 100%; height: 100px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; outline: none; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
-        <button id="setting-save-btn" class="btn"
-          style="width: 100%; padding: 12px; font-size: 15px; background-color: var(--accent-blue); color: white;">Save
-          Settings</button>
       </div>
     </div>
   </div>
 
+  <script src="../services/ai-presets.js"></script>
   <script src="../scripts/i18n.js"></script>
   <script src="../services/token-service.js"></script>
   <script src="popup-components.js"></script>
