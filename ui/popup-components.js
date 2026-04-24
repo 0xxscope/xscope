@@ -409,15 +409,26 @@ async function generateAiSummary(query, container) {
            if (contentDiv) contentDiv.innerHTML = finalCleaned;
         }
         chrome.runtime.onMessage.removeListener(aiStreamListener); // Release listener
+        clearTimeout(aiTimeoutId);
       }
       else if (msg.type === 'AI_ANALYZE_ERROR') {
         chrome.runtime.onMessage.removeListener(aiStreamListener); // Release listener
-        summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">${I18N[currentLang].analysisFailed || 'Analysis Failed'}</div>`;
+        clearTimeout(aiTimeoutId);
+        const errorMsg = msg.error || I18N[currentLang].analysisFailed || 'Analysis Failed';
+        summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">${errorMsg}</div>`;
       }
     };
 
     // Mount listener
     chrome.runtime.onMessage.addListener(aiStreamListener);
+    const aiTimeoutId = setTimeout(() => {
+      chrome.runtime.onMessage.removeListener(aiStreamListener);
+      if (!accumulatedText && contentDiv) {
+        summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">
+          ${I18N[currentLang].analysisFailed || 'Analysis timed out'}
+        </div>`;
+      }
+    }, 120000); // 2 minute fallback
 
     // Trigger background send, no longer await, entirely delegate to Listener to handle output stream
     chrome.runtime.sendMessage({
@@ -686,7 +697,7 @@ function loadSettings() {
   chrome.storage.local.get({
     clawalpha_max_tweets: DEFAULT_MAX_TWEETS,
     clawalpha_prompt: I18N[currentLang].defaultAiPrompt,
-    clawalpha_custom_ai_enabled: false,
+    clawalpha_custom_ai_enabled: true,
     clawalpha_show_floating_btn: true,
     clawalpha_api_url: '',
     clawalpha_api_key: '',

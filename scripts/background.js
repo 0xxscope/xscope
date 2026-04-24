@@ -140,37 +140,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === 'AI_ANALYZE') {
-    const targetAddr = request.payload.address; 
-    chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
-      const payload = { ...request.payload };
-      if (!payload.language) payload.language = items.clawalpha_lang;
+    const targetAddr = request.payload.address;
+    sendResponse({ success: true, started: true });  // Send ack first
+    
+    setTimeout(() => {  // Delay 50ms to allow frontend listener to mount
+      chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
+        const payload = { ...request.payload };
+        if (!payload.language) payload.language = items.clawalpha_lang;
 
-      // Call service, passing in onChunk push function
-      AI_SERVICE.handleAiAnalyzeRequest(payload, (chunkText) => {
-        chrome.runtime.sendMessage({
-          type: 'AI_ANALYZE_CHUNK',
-          address: targetAddr,
-          data: chunkText
-        }).catch(() => { });
-      }).then(data => {
-        // Broadcast on completion
-        chrome.runtime.sendMessage({
-          type: 'AI_ANALYZE_DONE',
-          address: targetAddr,
-          data: data
-        }).catch(() => { });
-      }).catch(err => {
-        // Broadcast on error
-        chrome.runtime.sendMessage({
-          type: 'AI_ANALYZE_ERROR',
-          address: targetAddr,
-          error: err.message
-        }).catch(() => { });
+        // Call service, passing in onChunk push function
+        AI_SERVICE.handleAiAnalyzeRequest(payload, (chunkText) => {
+          chrome.runtime.sendMessage({
+            type: 'AI_ANALYZE_CHUNK',
+            address: targetAddr,
+            data: chunkText
+          }).catch(err => console.warn('[AI_ANALYZE] send failed:', err));
+        }).then(data => {
+          // Broadcast on completion
+          chrome.runtime.sendMessage({
+            type: 'AI_ANALYZE_DONE',
+            address: targetAddr,
+            data: data
+          }).catch(err => console.warn('[AI_ANALYZE] send failed:', err));
+        }).catch(err => {
+          // Broadcast on error
+          chrome.runtime.sendMessage({
+            type: 'AI_ANALYZE_ERROR',
+            address: targetAddr,
+            error: err.message
+          }).catch(err => console.warn('[AI_ANALYZE] send failed:', err));
+        });
       });
-    });
+    }, 50);
 
-    // Immediately return started signal, no need to keep sendResponse channel open
-    sendResponse({ success: true, started: true });
     return false;
   }
 });

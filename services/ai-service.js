@@ -8,41 +8,43 @@ const AI_SERVICE = {
   async handleAiAnalyzeRequest(payload, onChunk) {
     try {
       const settings = await chrome.storage.local.get({
-        clawalpha_custom_ai_enabled: false,
+        clawalpha_custom_ai_enabled: true,
         clawalpha_api_url: '',
         clawalpha_api_key: '',
         clawalpha_model: '',
         clawalpha_prompt: 'Summarize the main narrative of this project...'
       });
 
-      let apiUrl, apiKey, model, requestBody, headers;
-
-      if (settings.clawalpha_custom_ai_enabled && settings.clawalpha_api_url && settings.clawalpha_api_key) {
-        // [User custom direct AI connection]
-        apiUrl = settings.clawalpha_api_url;
-        apiKey = settings.clawalpha_api_key;
-        model = settings.clawalpha_model || 'gpt-5.4-mini-2026-03-17';
-
-        const promptStr = JSON.stringify(payload, null, 2);
-        const fullPrompt = settings.clawalpha_prompt + "\n\n" + promptStr;
-
-        let payloadExt = { stream: true };
-        if (typeof AI_PRESETS !== 'undefined') {
-          const preset = Object.values(AI_PRESETS).find(p => p.model === settings.clawalpha_model);
-          if (preset && preset.payloadExt) payloadExt = { ...payloadExt, ...preset.payloadExt };
-        }
-
-        headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
-        requestBody = { model: model, messages: [{ role: 'user', content: fullPrompt }], ...payloadExt };
-      } else {
-        // [Proxy server backend request]
-        // apiUrl = 'http://localhost:3002/api/token/profile/analyze';
-        apiUrl = 'https://xscope.fun/api/token/profile/analyze';
-        headers = { 'Content-Type': 'application/json' };
-        requestBody = payload;
+      if (!settings.clawalpha_api_url || !settings.clawalpha_api_key) {
+        throw new Error('API URL or Key is missing. Please configure them in settings.');
       }
 
-      const res = await fetch(apiUrl, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
+      let apiUrl, apiKey, model, requestBody, headers;
+
+      // [User custom direct AI connection]
+      apiUrl = settings.clawalpha_api_url;
+      apiKey = settings.clawalpha_api_key;
+      model = settings.clawalpha_model || 'gpt-5.4-mini-2026-03-17';
+
+      const promptStr = JSON.stringify(payload, null, 2);
+      const fullPrompt = settings.clawalpha_prompt + "\n\n" + promptStr;
+
+      let payloadExt = { stream: true };
+      if (typeof AI_PRESETS !== 'undefined') {
+        const preset = Object.values(AI_PRESETS).find(p => p.model === settings.clawalpha_model);
+        if (preset && preset.payloadExt) payloadExt = { ...payloadExt, ...preset.payloadExt };
+      }
+
+      headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+      requestBody = { model: model, messages: [{ role: 'user', content: fullPrompt }], ...payloadExt };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      const res = await fetch(apiUrl, { 
+        method: 'POST', headers, body: JSON.stringify(requestBody),
+        signal: controller.signal 
+      });
+      clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`AI API error: ${res.status}`);
 
       // Handle non-streaming JSON response

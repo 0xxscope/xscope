@@ -49,7 +49,7 @@ const I18N = {
     apiUrlLabel: 'API URL:',
     apiKeyLabel: 'API Key:',
     modelLabel: 'Model Name:',
-    defaultAiPrompt: 'Summarize the main narrative of this project, including specific timelines and key information (e.g. key figure backgrounds, key events), and exclude invalid information.',
+    defaultAiPrompt: 'Summarize the main narrative of this project, including specific timelines and key information (e.g. key figure backgrounds, key events), and exclude invalid information. Avoid any introductory or concluding remarks, avoid all meaningless modifiers or subjective emotional expressions, and output the content directly.',
     copySuccess: '✅ Copied to clipboard! Press Ctrl+V (or Cmd+V) to paste into AI.',
     locale: 'en-US'
   },
@@ -103,7 +103,7 @@ const I18N = {
     apiUrlLabel: 'API 地址:',
     apiKeyLabel: 'API 密钥:',
     modelLabel: '模型名称:',
-    defaultAiPrompt: '总结一下这个项目的主要叙事，包括具体的时间线和关键信息(比如关键人物背景、关键事件)，排除掉无效的信息',
+    defaultAiPrompt: '总结一下这个项目的主要叙事，包括具体的时间线和关键信息(比如关键人物背景、关键事件)，排除掉无效的信息,拒绝任何开头和结尾的客套话,拒绝一切无意义的修饰词和主观抒情,直接输出正文',
     copySuccess: '✅ 已复制到剪贴板！请按 Ctrl+V (或 Cmd+V) 粘贴给 AI',
     locale: 'zh-CN'
   },
@@ -155,6 +155,7 @@ const I18N = {
     saveSuccess: '¡Guardado con éxito!',
     showFloatingBtn: 'Mostrar botón de análisis flotante',
     customAiLabel: 'Habilitar análisis de IA personalizado',
+    defaultAiPrompt: 'Resuma la narrativa principal de este proyecto, incluidos cronogramas específicos e información clave (por ejemplo, antecedentes de figuras clave, eventos clave), y excluya información no válida. Evite cualquier comentario introductorio o final, evite todos los modificadores sin sentido o expresiones emocionales subjetivas, y genere el contenido directamente.',
     copySuccess: '✅ ¡Copiado al portapapeles! Presione Ctrl+V (o Cmd+V) para pegar en AI.',
     locale: 'es-ES'
   },
@@ -205,6 +206,7 @@ const I18N = {
     saveSuccess: 'Erfolgreich gespeichert!',
     showFloatingBtn: 'Analyse-Schwebeschaltfläche anzeigen',
     customAiLabel: 'Benutzerdefinierte KI-Analyse aktivieren',
+    defaultAiPrompt: 'Fassen Sie die Hauptdarstellung dieses Projekts zusammen, einschließlich spezifischer Zeitpläne und wichtiger Informationen (z. B. Hintergründe wichtiger Personen, Schüsselereignisse), und schließen Sie ungültige Informationen aus. Vermeiden Sie jegliche einleitenden oder abschließenden Bemerkungen, vermeiden Sie alle bedeutungslosen Modifikatoren oder subjektiven emotionalen Ausdrücke und geben Sie den Inhalt direkt aus.',
     copySuccess: '✅ In die Zwischenablage kopiert! Drücken Sie Strg+V (oder Cmd+V), um es in die KI einzufügen.',
     locale: 'de-DE'
   },
@@ -255,6 +257,7 @@ const I18N = {
     saveSuccess: '保存しました！',
     showFloatingBtn: 'フローティング分析ボタンを表示',
     customAiLabel: 'カスタムAI分析を有効にする',
+    defaultAiPrompt: 'このプロジェクトの主なナラティブを要約してください。具体的なタイムラインや重要な情報（主要人物の経歴、主要な出来事など）を含め、無効な情報は除外してください。導入や結びの挨拶は避け、無意味な修飾語や主観的な感情表現を排除し、本文のみを直接出力してください。',
     copySuccess: '✅ クリップボードにコピーしました！Ctrl+V (または Cmd+V) を押して AI に貼り付けてください。',
     locale: 'ja-JP'
   },
@@ -305,6 +308,7 @@ const I18N = {
     saveSuccess: '저장되었습니다!',
     showFloatingBtn: '플로팅 분석 버튼 표시',
     customAiLabel: '사용자 정의 AI 분석 활성화',
+    defaultAiPrompt: '이 프로젝트의 주요 내러티브를 요약해 주세요. 구체적인 타임라인과 주요 정보(예: 주요 인물의 배경, 주요 사건)를 포함하고 무효한 정보는 제외하세요. 서론이나 결론의 인사말을 피하고, 무의미한 수식어나 주관적인 감정 표현을 배제하며, 본문 내용을 직접 출력하세요.',
     copySuccess: '✅ 클립보드에 복사되었습니다! Ctrl+V (또는 Cmd+V)를 눌러 AI에 붙여넣으세요.',
     locale: 'ko-KR'
   }
