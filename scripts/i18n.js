@@ -44,6 +44,7 @@ const I18N = {
     aiPromptTemplate: 'AI Prompt Template:',
     saveSettings: 'Save Settings',
     saveSuccess: 'Saved successfully!',
+    showFloatingBtn: 'Show Floating Analysis Button',
     customAiLabel: 'Enable Custom AI Analysis',
     apiUrlLabel: 'API URL:',
     apiKeyLabel: 'API Key:',
@@ -97,6 +98,7 @@ const I18N = {
     aiPromptTemplate: 'AI 提示词模板:',
     saveSettings: '保存设置',
     saveSuccess: '保存成功！',
+    showFloatingBtn: '显示网页悬浮分析按钮',
     customAiLabel: '启用自定义 AI 分析',
     apiUrlLabel: 'API 地址:',
     apiKeyLabel: 'API 密钥:',
@@ -151,7 +153,8 @@ const I18N = {
     aiPromptTemplate: 'Plantilla de prompt de IA:',
     saveSettings: 'Guardar configuración',
     saveSuccess: '¡Guardado con éxito!',
-    defaultAiPrompt: 'Resuma la narrativa principal de este proyecto, incluidos cronogramas específicos e información clave (por ejemplo, antecedentes de figuras clave, eventos clave), y excluya la información no válida.',
+    showFloatingBtn: 'Mostrar botón de análisis flotante',
+    customAiLabel: 'Habilitar análisis de IA personalizado',
     copySuccess: '✅ ¡Copiado al portapapeles! Presione Ctrl+V (o Cmd+V) para pegar en AI.',
     locale: 'es-ES'
   },
@@ -200,7 +203,8 @@ const I18N = {
     aiPromptTemplate: 'KI-Prompt-Vorlage:',
     saveSettings: 'Einstellungen speichern',
     saveSuccess: 'Erfolgreich gespeichert!',
-    defaultAiPrompt: 'Fassen Sie die Hauptnarrative dieses Projekts zusammen, einschließlich spezifischer Zeitpläne und wichtiger Informationen (z. B. Hintergründe zu Schlüsselpersonen, Schlüsselereignisse), und schließen Sie ungültige Informationen aus.',
+    showFloatingBtn: 'Analyse-Schwebeschaltfläche anzeigen',
+    customAiLabel: 'Benutzerdefinierte KI-Analyse aktivieren',
     copySuccess: '✅ In die Zwischenablage kopiert! Drücken Sie Strg+V (oder Cmd+V), um es in die KI einzufügen.',
     locale: 'de-DE'
   },
@@ -249,7 +253,8 @@ const I18N = {
     aiPromptTemplate: 'AIプロンプトテンプレート:',
     saveSettings: '設定を保存',
     saveSuccess: '保存しました！',
-    defaultAiPrompt: 'このプロジェクトの主要なナラティブを要約してください。具体的なタイムラインや重要な情報（主要人物の背景、重要なイベントなど）を含み、無効な情報は除外してください。',
+    showFloatingBtn: 'フローティング分析ボタンを表示',
+    customAiLabel: 'カスタムAI分析を有効にする',
     copySuccess: '✅ クリップボードにコピーしました！Ctrl+V (または Cmd+V) を押して AI に貼り付けてください。',
     locale: 'ja-JP'
   },
@@ -298,7 +303,8 @@ const I18N = {
     aiPromptTemplate: 'AI 프롬프트 템플릿:',
     saveSettings: '설정 저장',
     saveSuccess: '저장되었습니다!',
-    defaultAiPrompt: '이 프로젝트의 주요 내러티브를 요약하세요. 구체적인 타임라인과 핵심 정보(예: 핵심 인물 배경, 주요 사건)를 포함하고 유효하지 않은 정보는 제외하세요.',
+    showFloatingBtn: '플로팅 분석 버튼 표시',
+    customAiLabel: '사용자 정의 AI 분석 활성화',
     copySuccess: '✅ 클립보드에 복사되었습니다! Ctrl+V (또는 Cmd+V)를 눌러 AI에 붙여넣으세요.',
     locale: 'ko-KR'
   }

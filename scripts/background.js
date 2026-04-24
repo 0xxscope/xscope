@@ -1,6 +1,7 @@
 // background.js
 importScripts('../services/query-id-resolver.js');
 importScripts('../services/token-service.js');
+importScripts('../services/ai-presets.js');
 importScripts('../services/ai-service.js');
 // Target tweet count to fetch
 // const TARGET_TWEET_COUNT = 50; 
@@ -101,7 +102,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const scope = request.scope || 'main';
     const searchId = Date.now().toString();
     activeSearchIds[scope] = searchId;
-    const product = request.product || "Latest";
+
+    let product = request.product || "Latest";
+
+    if (scope.startsWith('modal') || scope === 'silent') {
+      product = "Latest";
+    }
 
     // Extract maxTweets parameter, default to 50 if not provided
     const maxTweets = request.maxTweets || 50;
@@ -481,7 +487,9 @@ async function fetchUserRelationList(userId, relationType, cursor) {
           name: u.name || u.screen_name,
           screenName: u.screen_name,
           avatar: u.profile_image_url_https || '',
-          desc: u.description || ''
+          desc: u.description || '',
+          followersCount: u.followers_count || 0,
+          followingCount: u.friends_count || 0
         });
       });
     }

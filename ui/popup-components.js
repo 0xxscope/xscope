@@ -1,181 +1,230 @@
+// popup-components.js
 
-// Dynamically create Modal container
-const modalOverlay = document.createElement('div');
-modalOverlay.className = 'modal-overlay';
-modalOverlay.innerHTML = `
-  <div class="modal-content">
-    <div class="modal-header">
-      <span id="modal-title">User List</span>
-      <div class="modal-close" id="modal-close">✕</div>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-`;
-document.body.appendChild(modalOverlay);
+// Dynamic modal z-index tracking
+let modalZIndex = 100;
 
-const modalBody = document.getElementById('modal-body');
-let currentRelationCursor = null;
-let currentRelationUserId = null;
-let currentRelationType = null;
-let isFetchingUsers = false;
-
-// Close popup
-document.getElementById('modal-close').addEventListener('click', () => {
-  modalOverlay.style.display = 'none';
-});
-
-// Global click event proxy (handles avatar clicks and following/follower lists)
+// Global click event delegation
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('avatar')) {
-    const dataset = e.target.dataset;
-    const screenName = dataset.screenname;
-
-    if (screenName) {
-      modalOverlay.style.display = 'flex';
-      document.getElementById('modal-title').textContent = I18N[currentLang].profile;
-
-      modalBody.innerHTML = `
-        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); background-color: rgba(29, 155, 240, 0.05);">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <img src="${e.target.src || DEFAULT_AVATAR}" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
-            <div style="flex: 1;">
-              <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${dataset.author || screenName}</div>
-              <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>
-            </div>
-            <a href="https://x.com/${screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-          </div>
-          ${dataset.desc && dataset.desc !== 'undefined' ? `<div style="font-size: 14px; line-height: 1.5; color: var(--text-primary); margin-bottom: 10px;">${dataset.desc}</div>` : ''}
-          <div style="display: flex; gap: 16px; font-size: 14px;">
-            <div class="stat-clickable" data-userid="${dataset.userid || ''}" data-type="following" style="cursor: pointer;">
-              <span style="color: var(--text-primary); font-weight: 700;">${formatNumber(dataset.following)}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].following}</span>
-            </div>
-            <div class="stat-clickable" data-userid="${dataset.userid || ''}" data-type="followers" style="cursor: pointer;">
-              <span style="color: var(--text-primary); font-weight: 700;">${formatNumber(dataset.followers)}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].followers}</span>
-            </div>
-            ${dataset.location && dataset.location !== 'undefined' ? `<div style="color: var(--text-secondary);">📍 ${dataset.location}</div>` : ''}
-          </div>
-        </div>
-        <div id="modal-tweets-container"></div>
-      `;
-
-      const modalContainer = document.getElementById('modal-tweets-container');
-
-      // Extract the userData you want to pass to the backend
-      const userData = {
-        screenname: screenName,
-        author: dataset.author,
-        desc: dataset.desc
-      };
-
-      // 👇 CRITICAL: call startSearch (with 'modal' scope), utilize .then to get tweet data and call profile analysis
-      startSearch(`from:${screenName}`, modalContainer, 'modal').then(response => {
-        if (response && response.success && response.data.length > 0) {
-          // Feed the pulled tweets to the independent user profile interface
-          // generateUserProfileAnalysis(userData, response.data, modalContainer);
-        }
-      });
-    }
+    openProfileModal(e.target); // Pass real DOM node to prevent src loss
     return;
   }
 
   const statBtn = e.target.closest('.stat-clickable');
   if (statBtn && statBtn.dataset.userid) {
-    currentRelationUserId = statBtn.dataset.userid;
-    currentRelationType = statBtn.dataset.type;
-    currentRelationCursor = null;
-
-    modalOverlay.style.display = 'flex';
-    document.getElementById('modal-title').textContent = currentRelationType === 'followers' ? I18N[currentLang].followers : I18N[currentLang].following;
-    modalBody.innerHTML = '';
-
-    loadRelationUsers();
+    openRelationModal(statBtn.dataset.userid, statBtn.dataset.type);
     return;
   }
 });
 
-// Core request function
-async function loadRelationUsers() {
-  if (isFetchingUsers) return;
-  isFetchingUsers = true;
+// ========== CORE: Dynamically Generate Profile Modal ==========
+function openProfileModal(target) {
+  const dataset = target.dataset;
+  const screenName = dataset.screenname;
+  if (!screenName) return;
+  
+  // Retrieve the actual image URL to prevent blank avatars
+  const imgSrc = target.src || (typeof DEFAULT_AVATAR !== 'undefined' ? DEFAULT_AVATAR : '');
 
-  const loader = document.createElement('div');
-  loader.className = 'loading-trigger';
-  loader.textContent = I18N[currentLang].loading;
-  modalBody.appendChild(loader);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  modalZIndex += 10;
+  overlay.style.zIndex = modalZIndex;
+  overlay.style.display = 'flex';
 
-  const response = await chrome.runtime.sendMessage({
-    type: 'FETCH_USERS',
-    userId: currentRelationUserId,
-    relationType: currentRelationType,
-    cursor: currentRelationCursor
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">${I18N[currentLang].profile}</span>
+        <div class="modal-close" style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;">✕</div>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding-bottom: 20px;"></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const modalBody = overlay.querySelector('.modal-body');
+  overlay.querySelector('.modal-close').addEventListener('click', () => {
+    overlay.remove(); // Completely destroy modal DOM
+    modalZIndex -= 10;
   });
 
-  loader.remove();
-  isFetchingUsers = false;
+  // Safely handle follower counts (avoid NaN if "unknown")
+  let followersVal = dataset.followers || I18N[currentLang].unknown;
+  let followingVal = dataset.following || I18N[currentLang].unknown;
+  if (!isNaN(followersVal) && String(followersVal).trim() !== '') followersVal = formatNumber(followersVal);
+  if (!isNaN(followingVal) && String(followingVal).trim() !== '') followingVal = formatNumber(followingVal);
 
-  if (response.success) {
-    const { users, cursor } = response.data;
-    currentRelationCursor = cursor;
+  // Create a unique container ID to prevent rendering collisions
+  const uniqueId = 'tweets-container-' + Date.now() + Math.floor(Math.random() * 1000);
 
-    users.forEach(u => {
-      const item = document.createElement('div');
-      item.className = 'user-list-item';
-      item.innerHTML = `
-        <img src="${u.avatar || DEFAULT_AVATAR}" class="avatar" 
-             data-screenname="${u.screenName}" 
-             data-author="${escapeHtml(u.name)}" 
-             data-desc="${escapeHtml(u.desc)}" 
-             data-userid="${u.id}" 
-             data-followers="${I18N[currentLang].unknown}" 
-             data-following="${I18N[currentLang].unknown}" 
-             style="width: 40px; height: 40px; border-radius: 50%;">
-        <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; pointer-events: none;">
-          <div style="font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(u.name)}</div>
-          <div style="color: var(--text-secondary); font-size: 13px;">@${escapeHtml(u.screenName)}</div>
+  modalBody.innerHTML = `
+    <div style="padding: 16px; border-bottom: 1px solid var(--border-color); background-color: rgba(29, 155, 240, 0.05);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+        <img src="${imgSrc}" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
+        <div style="flex: 1;">
+          <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${dataset.author || screenName}</div>
+          <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>
         </div>
-      `;
+        <a href="https://x.com/${screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+      ${dataset.desc && dataset.desc !== 'undefined' ? `<div style="font-size: 14px; line-height: 1.5; color: var(--text-primary); margin-bottom: 10px;">${dataset.desc}</div>` : ''}
+      <div style="display: flex; gap: 16px; font-size: 14px;">
+        <div class="stat-clickable" data-userid="${dataset.userid || ''}" data-type="following" style="cursor: pointer;">
+          <span style="color: var(--text-primary); font-weight: 700;">${followingVal}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].following}</span>
+        </div>
+        <div class="stat-clickable" data-userid="${dataset.userid || ''}" data-type="followers" style="cursor: pointer;">
+          <span style="color: var(--text-primary); font-weight: 700;">${followersVal}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].followers}</span>
+        </div>
+        ${dataset.location && dataset.location !== 'undefined' ? `<div style="color: var(--text-secondary);">📍 ${dataset.location}</div>` : ''}
+      </div>
+    </div>
+    <div id="${uniqueId}">
+      <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+        <svg class="spin-anim" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block; margin: 0 auto 10px auto;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <div style="margin-top: 10px;">${I18N[currentLang].searching || 'Searching...'}</div>
+      </div>
+    </div>
+  `;
 
-      item.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('avatar')) {
-          item.querySelector('.avatar').click();
-        }
-      });
-      modalBody.appendChild(item);
-    });
+  const modalContainer = document.getElementById(uniqueId);
+  // Generate a unique scope to prevent data mixing between concurrent modals
+  const uniqueScope = 'modal_' + Date.now() + Math.floor(Math.random() * 1000);
 
-    if (cursor && users.length > 0) {
-      const trigger = document.createElement('div');
-      trigger.className = 'loading-trigger';
-      trigger.textContent = I18N[currentLang].slideLoadMore;
-      modalBody.appendChild(trigger);
-      observer.observe(trigger);
-    } else if (users.length === 0 && !cursor) {
-      modalBody.innerHTML += `<div class="empty" style="padding: 20px; text-align: center;">${I18N[currentLang].noMore}</div>`;
-    }
-  } else {
-    // 👇 MODIFIED: Catch not logged in error and translate
-    let errorText = response.error;
-    if (errorText && errorText.includes("Please login")) {
-      errorText = I18N[currentLang].notLoggedIn;
+  // Directly invoke search via background message, bypassing the buggy legacy startSearch
+  chrome.runtime.sendMessage({
+    type: 'SEARCH',
+    query: `from:${screenName}`,
+    product: 'Latest', // Force Latest sorting
+    scope: uniqueScope,
+    maxTweets: 50
+  }).then(response => {
+    modalContainer.innerHTML = ''; // Remove loading animation
+    if (response && response.success && response.data && response.data.length > 0) {
+      // Once data is successfully fetched, use the global renderTweets utility
+      if (typeof renderTweets === 'function') {
+        renderTweets(response.data, modalContainer);
+      }
     } else {
-      errorText = I18N[currentLang].loadFailed(response.error);
+      modalContainer.innerHTML = `<div class="empty" style="padding: 20px; text-align: center; color: var(--text-secondary);">${I18N[currentLang].noData || 'No recent tweets.'}</div>`;
     }
-    modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
-        <div>${errorText}</div>
-        ${errorText === I18N[currentLang].notLoggedIn ? `<a href="https://x.com" target="_blank" style="display:inline-block; margin-top:16px; padding:8px 16px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-size:14px;">🔗 Go to login</a>` : ''}
-      </div>`;
-  }
+  }).catch(err => {
+    modalContainer.innerHTML = `<div class="error" style="padding: 20px; text-align: center; color: #f4212e;">Search failed.</div>`;
+  });
 }
 
-const observer = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) {
-    observer.unobserve(entries[0].target);
-    entries[0].target.remove();
-    loadRelationUsers();
+// ========== CORE: Dynamically Generate Relation List Modal ==========
+function openRelationModal(userId, relationType) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  modalZIndex += 10;
+  overlay.style.zIndex = modalZIndex;
+  overlay.style.display = 'flex';
+
+  const title = relationType === 'followers' ? I18N[currentLang].followers : I18N[currentLang].following;
+
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">${title}</span>
+        <div class="modal-close" style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;">✕</div>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding-bottom: 20px;"></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const modalBody = overlay.querySelector('.modal-body');
+  overlay.querySelector('.modal-close').addEventListener('click', () => {
+    overlay.remove();
+    modalZIndex -= 10;
+  });
+
+  let cursor = null;
+  let isFetching = false;
+
+  async function loadUsers() {
+    if (isFetching) return;
+    isFetching = true;
+
+    const loader = document.createElement('div');
+    loader.className = 'loading-trigger';
+    loader.textContent = I18N[currentLang].loading;
+    modalBody.appendChild(loader);
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'FETCH_USERS',
+      userId: userId,
+      relationType: relationType,
+      cursor: cursor
+    });
+
+    loader.remove();
+    isFetching = false;
+
+    if (response.success) {
+      const { users, cursor: nextCursor } = response.data;
+      cursor = nextCursor;
+
+      users.forEach(u => {
+        const item = document.createElement('div');
+        item.className = 'user-list-item';
+        item.innerHTML = `
+          <img src="${u.avatar || DEFAULT_AVATAR}" class="avatar" 
+               data-screenname="${u.screenName}" 
+               data-author="${escapeHtml(u.name)}" 
+               data-desc="${escapeHtml(u.desc)}" 
+               data-userid="${u.id}" 
+               data-followers="${u.followersCount !== undefined ? u.followersCount : I18N[currentLang].unknown}" 
+               data-following="${u.followingCount !== undefined ? u.followingCount : I18N[currentLang].unknown}" 
+               style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+          <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; pointer-events: none;">
+            <div style="font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(u.name)}</div>
+            <div style="color: var(--text-secondary); font-size: 13px;">@${escapeHtml(u.screenName)}</div>
+          </div>
+        `;
+        item.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('avatar')) {
+            item.querySelector('.avatar').click();
+          }
+        });
+        modalBody.appendChild(item);
+      });
+
+      if (cursor && users.length > 0) {
+        const trigger = document.createElement('div');
+        trigger.className = 'loading-trigger';
+        trigger.textContent = I18N[currentLang].slideLoadMore;
+        modalBody.appendChild(trigger);
+        
+        const localObserver = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) {
+            localObserver.unobserve(entries[0].target);
+            entries[0].target.remove();
+            loadUsers();
+          }
+        }, { root: modalBody, threshold: 0.1 });
+        localObserver.observe(trigger);
+      } else if (users.length === 0 && !cursor) {
+        modalBody.innerHTML += `<div class="empty" style="padding: 20px; text-align: center;">${I18N[currentLang].noMore}</div>`;
+      }
+    } else {
+       let errorText = response.error;
+       if (errorText && errorText.includes("Please login")) {
+         errorText = I18N[currentLang].notLoggedIn;
+       } else {
+         errorText = I18N[currentLang].loadFailed(response.error);
+       }
+       modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
+           <div>${errorText}</div>
+           ${errorText === I18N[currentLang].notLoggedIn ? `<a href="https://x.com" target="_blank" style="display:inline-block; margin-top:16px; padding:8px 16px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-size:14px;">🔗 Go to login</a>` : ''}
+         </div>`;
+    }
   }
-}, { root: modalBody, threshold: 0.1 });
+  loadUsers();
+}
 
 // AI Scheduler: manage parallel data streams and deep analysis
 async function generateAiSummary(query, container) {
@@ -362,15 +411,33 @@ function renderTokenCardUI(container, info) {
     ${info.description ? `<div style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); max-height: 60px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">${escapeHtml(info.description)}</div>` : ''}
   `;
 
-  // Bind click official twitter to display in Modal
   const xBtn = container.querySelector('#token-x-btn');
   if (xBtn) {
     xBtn.addEventListener('click', async () => {
-      modalOverlay.style.display = 'flex';
+      // Dynamically create a modal for official token tweets
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      modalZIndex += 10;
+      overlay.style.zIndex = modalZIndex;
+      overlay.style.display = 'flex';
+      
       const handle = info.twitterLink.split('/').pop();
-      // Ensure we display something on title even if translation missing
-      document.getElementById('modal-title').textContent = (I18N[currentLang].officialTweets) ? I18N[currentLang].officialTweets(handle) : `@${handle} Tweets`;
-      const modalBody = document.getElementById('modal-body');
+      overlay.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="modal-title">${(I18N[currentLang].officialTweets) ? I18N[currentLang].officialTweets(handle) : `@${handle} Tweets`}</span>
+            <div class="modal-close" style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;">✕</div>
+          </div>
+          <div class="modal-body" style="flex: 1; overflow-y: auto; padding-bottom: 20px;"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const modalBody = overlay.querySelector('.modal-body');
+      overlay.querySelector('.modal-close').addEventListener('click', () => {
+        overlay.remove();
+        modalZIndex -= 10;
+      });
 
       // Temporary loading UI
       modalBody.innerHTML = `
@@ -414,9 +481,9 @@ function renderTokenCardUI(container, info) {
         </div>
       `;
 
-      modalBody.innerHTML = profileHtml + '<div id="modal-tweets-container"></div>';
+      modalBody.innerHTML = profileHtml + '<div id="modal-tweets-container-dynamic"></div>';
 
-      const tweetsContainer = document.getElementById('modal-tweets-container');
+      const tweetsContainer = modalBody.querySelector('#modal-tweets-container-dynamic');
       if (tweets.length > 0) {
         renderTweets(tweets, tweetsContainer);
       } else {
@@ -560,6 +627,7 @@ function loadSettings() {
     clawalpha_max_tweets: DEFAULT_MAX_TWEETS,
     clawalpha_prompt: I18N[currentLang].defaultAiPrompt,
     clawalpha_custom_ai_enabled: false,
+    clawalpha_show_floating_btn: true,
     clawalpha_api_url: '',
     clawalpha_api_key: '',
     clawalpha_model: ''
@@ -567,6 +635,9 @@ function loadSettings() {
     settingMaxTweetsInput.value = items.clawalpha_max_tweets;
     settingPromptInput.value = items.clawalpha_prompt;
     settingCustomAiEnabled.checked = items.clawalpha_custom_ai_enabled;
+    if (document.getElementById('setting-show-floating-btn')) {
+      document.getElementById('setting-show-floating-btn').checked = items.clawalpha_show_floating_btn;
+    }
     customAiFields.style.display = items.clawalpha_custom_ai_enabled ? 'block' : 'none';
     settingApiUrlInput.value = items.clawalpha_api_url;
     settingApiKeyInput.value = items.clawalpha_api_key;
@@ -595,6 +666,7 @@ if (settingSaveBtn) {
     const newMaxTweets = parseInt(settingMaxTweetsInput.value) || DEFAULT_MAX_TWEETS;
     const newPrompt = settingPromptInput.value.trim();
     const isCustomAi = settingCustomAiEnabled.checked;
+    const isShowFloatingBtn = document.getElementById('setting-show-floating-btn')?.checked ?? true;
     const apiUrl = settingApiUrlInput.value.trim();
     const apiKey = settingApiKeyInput.value.trim();
     const modelName = settingModelInput.value.trim();
@@ -603,6 +675,7 @@ if (settingSaveBtn) {
       clawalpha_max_tweets: newMaxTweets,
       clawalpha_prompt: newPrompt,
       clawalpha_custom_ai_enabled: isCustomAi,
+      clawalpha_show_floating_btn: isShowFloatingBtn,
       clawalpha_api_url: apiUrl,
       clawalpha_api_key: apiKey,
       clawalpha_model: modelName

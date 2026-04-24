@@ -32,6 +32,9 @@ function updateUI() {
   const settingMaxTweetsLabel = document.getElementById('setting-max-tweets-label');
   if (settingMaxTweetsLabel) settingMaxTweetsLabel.textContent = I18N[currentLang].maxTweetsLimit;
   
+  const settingShowFloatingBtnLabel = document.getElementById('setting-show-floating-btn-label');
+  if (settingShowFloatingBtnLabel) settingShowFloatingBtnLabel.textContent = I18N[currentLang].showFloatingBtn;
+  
   const settingCustomAiLabel = document.getElementById('setting-custom-ai-label');
   if (settingCustomAiLabel) settingCustomAiLabel.textContent = I18N[currentLang].customAiLabel;
   const settingApiUrlLabel = document.getElementById('setting-api-url-label');

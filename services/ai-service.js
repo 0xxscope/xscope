@@ -23,6 +23,15 @@ const AI_SERVICE = {
         const promptStr = JSON.stringify(payload, null, 2);
         const fullPrompt = settings.clawalpha_prompt + "\n\n" + promptStr;
 
+        // 3. Find matching preset for extra parameters (like reasoning/thinking)
+        let payloadExt = { stream: false }; // Default: disable streaming
+        if (typeof AI_PRESETS !== 'undefined') {
+          const preset = Object.values(AI_PRESETS).find(p => p.model === settings.clawalpha_model);
+          if (preset && preset.payloadExt) {
+            payloadExt = { ...payloadExt, ...preset.payloadExt };
+          }
+        }
+
         const res = await fetch(settings.clawalpha_api_url, {
           method: 'POST',
           headers: {
@@ -34,6 +43,7 @@ const AI_SERVICE = {
             messages: [
               { role: 'user', content: fullPrompt }
             ],
+            ...payloadExt
           })
         });
 
@@ -49,7 +59,8 @@ const AI_SERVICE = {
 
       // 3. Fallback to default proxy service
       console.log("[AI] Using default proxy at frenmap.fun");
-      const res = await fetch('https://frenmap.fun/api/token/profile/analyze', {
+      // const res = await fetch('https://frenmap.fun/api/token/profile/analyze', {
+      const res = await fetch('http://localhost:3002/api/token/profile/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

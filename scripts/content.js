@@ -17,7 +17,7 @@ Object.assign(floatingBtn.style, {
     height: '52px',
     backgroundColor: '#000',
     borderRadius: '50%',
-    display: 'flex',
+    display: 'none', // Hidden by default to prevent flickering before storage loads
     justifyContent: 'center',
     alignItems: 'center',
     cursor: 'grab', // Default grab gesture
@@ -27,7 +27,23 @@ Object.assign(floatingBtn.style, {
     transition: 'transform 0.2s ease',
     userSelect: 'none'
 });
+// Initial visibility check
+chrome.storage.local.get({
+    clawalpha_show_floating_btn: true
+}, (items) => {
+    floatingBtn.style.display = items.clawalpha_show_floating_btn ? 'flex' : 'none';
+});
 
+// Listen for settings changes to show/hide floating button
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.clawalpha_show_floating_btn) {
+        floatingBtn.style.display = changes.clawalpha_show_floating_btn.newValue ? 'flex' : 'none';
+        // If hidden, also ensure panel is hidden
+        if (!changes.clawalpha_show_floating_btn.newValue) {
+            iframeContainer.style.display = 'none';
+        }
+    }
+});
 // Add Hover animation
 floatingBtn.onmouseover = () => {
     if (!isDragging) floatingBtn.style.transform = 'scale(1.1)';

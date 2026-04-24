@@ -23,6 +23,12 @@ const AI_PRESETS = {
     model: "gemini-3.1-pro-preview",
     notes: "Google Gemini native API. Use v1beta for latest features."
   },
+  deepseek: {
+    name: "DeepSeek (deepseek-v4-pro)",
+    apiUrl: "https://api.deepseek.com/chat/completions",
+    model: "deepseek-v4-pro",
+    notes: "High-performance LLM from DeepSeek. Optimized for fast response."
+  },
 
 };
 
