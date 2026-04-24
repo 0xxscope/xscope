@@ -30,7 +30,7 @@
     "https://web3.okx.com/*",
     "https://photon-sol.tinyastro.io/*",
     "https://debot.ai/*",
-    "https://frenmap.fun/*",
+    "https://xscope.fun/*",
     "http://localhost:*/*",
     "http://127.0.0.1:*/*",
     "https://gemini.google.com/*",
@@ -63,7 +63,7 @@
         "https://web3.okx.com/*",
         "https://photon-sol.tinyastro.io/*",
         "https://debot.ai/*",
-        "https://frenmap.fun/*",
+        "https://xscope.fun/*",
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
         "https://gemini.google.com/*",
@@ -104,14 +104,14 @@
         "https://web3.okx.com/*",
         "https://photon-sol.tinyastro.io/*",
         "https://debot.ai/*",
-        "https://frenmap.fun/*",
+        "https://axiom.trade/*",
+        "https://www.xxyy.io/*",
+        "https://xscope.fun/*",
         "http://localhost:*/*",
         "http://127.0.0.1:*/*",
         "https://gemini.google.com/*",
         "https://chatgpt.com/*",
-        "https://claude.ai/*",
-        "https://axiom.trade/*",
-        "https://www.xxyy.io/*"
+        "https://claude.ai/*"
       ]
     }
   ]

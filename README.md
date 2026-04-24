@@ -38,6 +38,22 @@ XScope is a premium browser extension designed for crypto traders, researchers, 
   - **X (Twitter) GraphQL & REST v1.1** for social data.
   - **OpenAI-Compatible APIs** for custom intelligence.
 
+## 📺 Visual Previews
+
+### Native Terminal Integration
+XScope seamlessly injects AI-driven narrative intelligence directly into your favorite trading dashboards.
+
+| GMGN.ai Integration | Photon Integration |
+| :---: | :---: |
+| ![GMGN Preview](assets/gmgn.png) | ![Photon Preview](assets/photon.png) |
+
+### Advanced Narrative Intelligence
+While the built-in system uses efficient models, you can export structured data to unthrottled web-based versions like **Gemini 1.5 Pro** for deeper reasoning.
+
+| Gemini Enhanced Analysis |
+| :---: |
+| ![Gemini Analysis](assets/gemini.png) |
+
 ## 📦 Installation
 
 1. Clone or download this repository.
@@ -45,18 +61,19 @@ XScope is a premium browser extension designed for crypto traders, researchers, 
 3. Enable **Developer mode** (top right).
 4. Click **Load unpacked** and select the `/bird` directory.
 
-## ⚙️ Configuration
+## ⚙️ Configuration & Tips
 
-Click the **Gear icon** in the extension to access System Settings:
-- **Max Crawl Count**: Adjust how many tweets to fetch per search (default: 50).
-- **Search Type**: Toggle between "Latest" and "Top" tweets.
-- **Custom AI Provider**: Enable custom API endpoints, set your API key, and select preferred models.
+XScope is designed to be flexible. You can access the **Global Settings** by clicking the **Gear icon** inside the popup, or simply **click the XScope LOGO** in the top-left corner for instant access.
+
+- **Max Fetch Count**: Adjust how many tweets to fetch per search (default: 50, recommended ≤ 100 for stability).
+- **AI Customization**: Bind your own **API Key** and customize the **System Prompt** to tailor the narrative analysis to your specific trading strategies.
 - **Floating Button**: Toggle the visibility of the on-page floating analysis button.
 
-## ⚠️ Notes
+## 🛡️ Technical Requirement & Privacy
 
-- This extension requires an active session on **X.com** to fetch social data.
-- For the best experience, ensure you are logged in to your preferred AI platforms (Gemini/ChatGPT/Claude) if using the one-click automation feature.
+- **Safe Search**: XScope performs scans by utilizing your **active browser session cookies** on X.com. This ensures high-speed, secure data fetching without requiring your password.
+- **Login Required**: You MUST be logged into your account on **X.com** in this browser to enable search functionality.
+- **Cross-Platform**: Supported sites include GMGN, BullX, Axiom, xxyy, Binance Web3, OKX Web3, Photon, ChatGPT, Claude, and Gemini.
 
 ---
 *XScope: Empowering the next generation of crypto-native intelligence.*
