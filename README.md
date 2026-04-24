@@ -1,8 +1,8 @@
 # XScope - The Ultimate Twitter & Crypto Intelligence Extension
 
-xscope is a powerful browser extension that injects AI-driven narrative intelligence directly into your favorite trading terminals. Discover real-time Twitter (X) sentiment, developer updates, and token narratives without ever leaving your charts.
+xscope is a powerful browser extension that injects AI-driven narrative intelligence directly into your favorite trading terminals. Discover real-time X sentiment, developer updates, and token narratives without ever leaving your charts.
 
-[SYSTEM_NOTICE]: XScope performs secure, real-time searches by utilizing your active Twitter (X) session cookies. Please ensure you are logged into your X account in this browser to enable all features.
+XScope performs secure, real-time searches by utilizing your active X session cookies. Please ensure you are logged into your X account in this browser to enable all features.
 
 ## 🚀 Key Features
 
