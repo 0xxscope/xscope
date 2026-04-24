@@ -45,37 +45,69 @@ const AI_SERVICE = {
       const res = await fetch(apiUrl, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
       if (!res.ok) throw new Error(`AI API error: ${res.status}`);
 
-      // ===== Core: Stream reading and parsing =====
+      // Handle non-streaming JSON response
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('event-stream') && !contentType.includes('stream')) {
+        const json = await res.json();
+        const text =
+          json.choices?.[0]?.message?.content ||
+          json.result ||
+          json.content?.[0]?.text ||
+          '';
+        if (!text) throw new Error('AI returned empty result');
+        if (onChunk) onChunk(text);
+        return { result: text };
+      }
+
+      // ===== Streaming logic =====
       const reader = res.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let resultText = '';
       let buffer = '';
 
+      const processLine = (line) => {
+        if (!line || line.startsWith(':')) return; // Skip empty lines and SSE comments/heartbeats
+        if (line === 'data: [DONE]') return;
+        if (!line.startsWith('data: ')) return;
+
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          if (parsed.error) {
+            throw new Error(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error));
+          }
+          // Compatible with OpenAI / DeepSeek / Proxy: choices[0].delta.content
+          // Compatible with Custom Proxy: chunk
+          // Compatible with Claude SSE: delta.text
+          const chunkStr =
+            parsed.choices?.[0]?.delta?.content ||
+            parsed.delta?.text ||
+            parsed.chunk ||
+            '';
+          if (chunkStr) {
+            resultText += chunkStr;
+            if (onChunk) onChunk(chunkStr);
+          }
+        } catch (e) {
+          console.warn('[AI_SERVICE] Failed to parse line:', line, e);
+          if (e.message.includes('API key') || e.message.includes('rate limit')) throw e;
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Handle potential tail remaining in buffer
+          const tail = buffer.trim();
+          if (tail) processLine(tail);
+          break;
+        }
         buffer += decoder.decode(value, { stream: true });
 
         let newlineIndex;
         while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
           const line = buffer.slice(0, newlineIndex).trim();
           buffer = buffer.slice(newlineIndex + 1);
-
-          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              // Error handling: if the backend returns an error field, throw immediately
-              if (parsed.error) throw new Error(parsed.error);
-
-              const chunkStr = parsed.choices?.[0]?.delta?.content || parsed.chunk || '';
-              if (chunkStr) {
-                resultText += chunkStr;
-                if (onChunk) onChunk(chunkStr);
-              }
-            } catch (e) {
-              if (e.message.includes('API key') || e.message.includes('Error')) throw e;
-            }
-          }
+          processLine(line);
         }
       }
 
