@@ -58,8 +58,8 @@ const AI_SERVICE = {
       }
 
       // 3. Fallback to default proxy service
-      console.log("[AI] Using default proxy at frenmap.fun");
-      // const res = await fetch('https://frenmap.fun/api/token/profile/analyze', {
+      console.log("[AI] Using default proxy at xscope.fun");
+      // const res = await fetch('https://xscope.fun/api/token/profile/analyze', {
       const res = await fetch('http://localhost:3002/api/token/profile/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
