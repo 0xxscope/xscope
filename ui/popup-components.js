@@ -17,12 +17,27 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Data cleaning function (Redefined here to ensure availability in components scope)
+function cleanData(data) {
+  if (!data) return null;
+  if (typeof data !== 'string') {
+    data = JSON.stringify(data);
+  }
+  return data
+    .replace(/\\n/g, '\n')
+    .replace(/\\"/g, '"')
+    .replace(/<br>/g, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\\\\"/g, '"')
+    .replace(/\\\\/g, '\\');
+}
+
 // ========== CORE: Dynamically Generate Profile Modal ==========
 function openProfileModal(target) {
   const dataset = target.dataset;
   const screenName = dataset.screenname;
   if (!screenName) return;
-  
+
   // Retrieve the actual image URL to prevent blank avatars
   const imgSrc = target.src || (typeof DEFAULT_AVATAR !== 'undefined' ? DEFAULT_AVATAR : '');
 
@@ -198,7 +213,7 @@ function openRelationModal(userId, relationType) {
         trigger.className = 'loading-trigger';
         trigger.textContent = I18N[currentLang].slideLoadMore;
         modalBody.appendChild(trigger);
-        
+
         const localObserver = new IntersectionObserver((entries) => {
           if (entries[0].isIntersecting) {
             localObserver.unobserve(entries[0].target);
@@ -211,13 +226,13 @@ function openRelationModal(userId, relationType) {
         modalBody.innerHTML += `<div class="empty" style="padding: 20px; text-align: center;">${I18N[currentLang].noMore}</div>`;
       }
     } else {
-       let errorText = response.error;
-       if (errorText && errorText.includes("Please login")) {
-         errorText = I18N[currentLang].notLoggedIn;
-       } else {
-         errorText = I18N[currentLang].loadFailed(response.error);
-       }
-       modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
+      let errorText = response.error;
+      if (errorText && errorText.includes("Please login")) {
+        errorText = I18N[currentLang].notLoggedIn;
+      } else {
+        errorText = I18N[currentLang].loadFailed(response.error);
+      }
+      modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
            <div>${errorText}</div>
            ${errorText === I18N[currentLang].notLoggedIn ? `<a href="https://x.com" target="_blank" style="display:inline-block; margin-top:16px; padding:8px 16px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-size:14px;">🔗 Go to login</a>` : ''}
          </div>`;
@@ -357,12 +372,57 @@ async function generateAiSummary(query, container) {
   actionsContainer.appendChild(claudeBtn);
   analysisWrapper.insertBefore(actionsContainer, summaryBox);
 
-  // Call AI deep analysis via background script
+  // ================= REPLACEMENT START =================
   try {
-    const result = await chrome.runtime.sendMessage({
+    // Initialize empty analysis UI container
+    renderAiAnalysisUI(summaryBox, { result: '' });
+    const contentDiv = summaryBox.querySelector('#ai-analysis-content');
+    let accumulatedText = '';
+
+    // Establish an independent message listener to receive stream
+    const aiStreamListener = (msg) => {
+      // Add fault-tolerant matching: ensure addresses match (case-insensitive and trimmed)
+      const targetAddress = String(query).toLowerCase().trim();
+      const incomingAddress = String(msg.address || '').toLowerCase().trim();
+      
+      if (incomingAddress !== targetAddress) return; 
+
+      if (msg.type === 'AI_ANALYZE_CHUNK') {
+        accumulatedText += (msg.data || '');
+        // Filter and update DOM in real-time to render typewriter effect
+        const cleaned = accumulatedText
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\*(.+?)\*/g, '$1')
+          .replace(/^#{1,6}\s*/gm, '');
+          
+        if (contentDiv && cleaned) {
+          contentDiv.innerHTML = cleaned;
+        }
+      }
+      else if (msg.type === 'AI_ANALYZE_DONE') {
+        // 【Fallback】If accumulatedText is still empty on completion, use the full result
+        if (!accumulatedText && msg.data && msg.data.result) {
+           const finalCleaned = msg.data.result
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/^#{1,6}\s*/gm, '');
+           if (contentDiv) contentDiv.innerHTML = finalCleaned;
+        }
+        chrome.runtime.onMessage.removeListener(aiStreamListener); // Release listener
+      }
+      else if (msg.type === 'AI_ANALYZE_ERROR') {
+        chrome.runtime.onMessage.removeListener(aiStreamListener); // Release listener
+        summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">${I18N[currentLang].analysisFailed || 'Analysis Failed'}</div>`;
+      }
+    };
+
+    // Mount listener
+    chrome.runtime.onMessage.addListener(aiStreamListener);
+
+    // Trigger background send, no longer await, entirely delegate to Listener to handle output stream
+    chrome.runtime.sendMessage({
       type: 'AI_ANALYZE',
       payload: {
-        // Directly send cleaned strings
         tweets: cleanData(optimizedTweets),
         searchResults: cleanData(optimizedSearchResults),
         address: query,
@@ -373,16 +433,10 @@ async function generateAiSummary(query, container) {
       }
     });
 
-    if (result.success && result.data && result.data.result) {
-      renderAiAnalysisUI(summaryBox, result.data);
-    } else if (result.data && (result.data.chinese || result.data.english)) {
-      renderAiAnalysisUI(summaryBox, { result: result.data.chinese || result.data.english });
-    } else {
-      summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">${I18N[currentLang].analysisFailed}</div>`;
-    }
   } catch (e) {
     summaryBox.innerHTML = `<div style="color:var(--text-secondary);font-size:13px;">${I18N[currentLang].aiConnError}</div>`;
   }
+  // ================= REPLACEMENT END =================
 }
 
 // Helper rendering: Token card and interaction
@@ -420,7 +474,7 @@ function renderTokenCardUI(container, info) {
       modalZIndex += 10;
       overlay.style.zIndex = modalZIndex;
       overlay.style.display = 'flex';
-      
+
       const handle = info.twitterLink.split('/').pop();
       overlay.innerHTML = `
         <div class="modal-content">
@@ -502,6 +556,12 @@ function renderAiAnalysisUI(container, data) {
     .replace(/\*(.+?)\*/g, '$1')
     .replace(/^#{1,6}\s*/gm, '');
 
+  // Add Loading state HTML
+  const loadingHtml = `<div class="ai-loading" style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; padding: 4px 0;">
+    <svg class="spin-anim" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    <span>${I18N[currentLang].loading}</span>
+  </div>`;
+
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <div style="font-weight: 800; color: var(--accent-blue); display: flex; align-items: center; gap: 6px; font-size: 15px;">
@@ -512,7 +572,7 @@ function renderAiAnalysisUI(container, data) {
         <svg id="ai-collapse-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
       </div>
     </div>
-    <div id="ai-analysis-content" style="white-space: pre-wrap; line-height: 1.6; text-align: justify; font-size: 14px; transition: max-height 0.4s ease, opacity 0.3s ease; overflow: hidden; opacity: 1; max-height: 9999px;">${content}</div>
+    <div id="ai-analysis-content" style="white-space: pre-wrap; line-height: 1.6; text-align: justify; font-size: 14px; transition: max-height 0.4s ease, opacity 0.3s ease; overflow: hidden; opacity: 1; max-height: 9999px;">${content || loadingHtml}</div>
   `;
 
   const btn = container.querySelector('#ai-collapse-btn');

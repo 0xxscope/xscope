@@ -309,3 +309,18 @@ const I18N = {
     locale: 'ko-KR'
   }
 };
+
+// Global attachment and initialization
+window.I18N = I18N;
+window.currentLang = window.currentLang || 'en';
+
+if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+  chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
+    window.currentLang = items.clawalpha_lang;
+    console.log('[I18N] Loaded language:', window.currentLang);
+    // Trigger UI update if function exists
+    if (typeof updateUI === 'function') {
+      updateUI();
+    }
+  });
+}

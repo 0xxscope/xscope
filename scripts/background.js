@@ -139,22 +139,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // 👇 New listener for fetching AI analysis locally without a server
   if (request.type === 'AI_ANALYZE') {
-    // Determine language: priority is request.payload.language -> stored setting -> 'en'
+    const targetAddr = request.payload.address; 
     chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
       const payload = { ...request.payload };
-      if (!payload.language) {
-        payload.language = items.clawalpha_lang;
-      }
+      if (!payload.language) payload.language = items.clawalpha_lang;
 
-      AI_SERVICE.handleAiAnalyzeRequest(payload).then(data => {
-        sendResponse({ success: true, data: data });
+      // Call service, passing in onChunk push function
+      AI_SERVICE.handleAiAnalyzeRequest(payload, (chunkText) => {
+        chrome.runtime.sendMessage({
+          type: 'AI_ANALYZE_CHUNK',
+          address: targetAddr,
+          data: chunkText
+        }).catch(() => { });
+      }).then(data => {
+        // Broadcast on completion
+        chrome.runtime.sendMessage({
+          type: 'AI_ANALYZE_DONE',
+          address: targetAddr,
+          data: data
+        }).catch(() => { });
       }).catch(err => {
-        sendResponse({ success: false, error: err.message });
+        // Broadcast on error
+        chrome.runtime.sendMessage({
+          type: 'AI_ANALYZE_ERROR',
+          address: targetAddr,
+          error: err.message
+        }).catch(() => { });
       });
     });
-    return true;
+
+    // Immediately return started signal, no need to keep sendResponse channel open
+    sendResponse({ success: true, started: true });
+    return false;
   }
 });
 

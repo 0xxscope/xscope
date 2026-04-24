@@ -4,76 +4,84 @@ const AI_SERVICE = {
   /**
    * Handle AI analysis request. Supports both default proxy and custom API endpoints.
    */
-  async handleAiAnalyzeRequest(payload) {
+  // Added second parameter onChunk for receiving streaming callbacks
+  async handleAiAnalyzeRequest(payload, onChunk) {
     try {
-      // 1. Fetch settings from storage
       const settings = await chrome.storage.local.get({
         clawalpha_custom_ai_enabled: false,
         clawalpha_api_url: '',
         clawalpha_api_key: '',
         clawalpha_model: '',
-        clawalpha_prompt: 'Summarize the main narrative of this project, including specific timelines and key information, and exclude invalid information.'
+        clawalpha_prompt: 'Summarize the main narrative of this project...'
       });
 
-      // 2. If custom AI is enabled, use the user-provided endpoint
-      if (settings.clawalpha_custom_ai_enabled && settings.clawalpha_api_url && settings.clawalpha_api_key) {
-        console.log("[AI] Using custom AI provider:", settings.clawalpha_api_url);
+      let apiUrl, apiKey, model, requestBody, headers;
 
-        // Construct the same prompt as used in clipboard export
+      if (settings.clawalpha_custom_ai_enabled && settings.clawalpha_api_url && settings.clawalpha_api_key) {
+        // [User custom direct AI connection]
+        apiUrl = settings.clawalpha_api_url;
+        apiKey = settings.clawalpha_api_key;
+        model = settings.clawalpha_model || 'gpt-5.4-mini-2026-03-17';
+
         const promptStr = JSON.stringify(payload, null, 2);
         const fullPrompt = settings.clawalpha_prompt + "\n\n" + promptStr;
 
-        // 3. Find matching preset for extra parameters (like reasoning/thinking)
-        let payloadExt = { stream: false }; // Default: disable streaming
+        let payloadExt = { stream: true };
         if (typeof AI_PRESETS !== 'undefined') {
           const preset = Object.values(AI_PRESETS).find(p => p.model === settings.clawalpha_model);
-          if (preset && preset.payloadExt) {
-            payloadExt = { ...payloadExt, ...preset.payloadExt };
+          if (preset && preset.payloadExt) payloadExt = { ...payloadExt, ...preset.payloadExt };
+        }
+
+        headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+        requestBody = { model: model, messages: [{ role: 'user', content: fullPrompt }], ...payloadExt };
+      } else {
+        // [Proxy server backend request]
+        // apiUrl = 'http://localhost:3002/api/token/profile/analyze';
+        apiUrl = 'https://xscope.fun/api/token/profile/analyze';
+        headers = { 'Content-Type': 'application/json' };
+        requestBody = payload;
+      }
+
+      const res = await fetch(apiUrl, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
+      if (!res.ok) throw new Error(`AI API error: ${res.status}`);
+
+      // ===== Core: Stream reading and parsing =====
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let resultText = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
+          const line = buffer.slice(0, newlineIndex).trim();
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              // Error handling: if the backend returns an error field, throw immediately
+              if (parsed.error) throw new Error(parsed.error);
+
+              const chunkStr = parsed.choices?.[0]?.delta?.content || parsed.chunk || '';
+              if (chunkStr) {
+                resultText += chunkStr;
+                if (onChunk) onChunk(chunkStr);
+              }
+            } catch (e) {
+              if (e.message.includes('API key') || e.message.includes('Error')) throw e;
+            }
           }
         }
-
-        const res = await fetch(settings.clawalpha_api_url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${settings.clawalpha_api_key}`
-          },
-          body: JSON.stringify({
-            model: settings.clawalpha_model || 'gpt-5.4-mini-2026-03-17',
-            messages: [
-              { role: 'user', content: fullPrompt }
-            ],
-            ...payloadExt
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error(`Custom AI API error: ${res.status}`);
-        }
-
-        const responseData = await res.json();
-        // Return standard OpenAI response shape or fallback to raw content
-        const resultText = responseData.choices?.[0]?.message?.content || responseData.content || responseData.result || "";
-        return { result: resultText };
       }
 
-      // 3. Fallback to default proxy service
-      console.log("[AI] Using default proxy at xscope.fun");
-      const res = await fetch('https://xscope.fun/api/token/profile/analyze', {
-        // const res = await fetch('http://localhost:3002/api/token/profile/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        throw new Error(`Proxy AI HTTP ${res.status}`);
-      }
-
-      const responseData = await res.json();
-      return responseData.data || responseData;
+      if (!resultText) throw new Error('AI returned empty result');
+      return { result: resultText };
     } catch (err) {
-      console.error("[AI] Analysis failed:", err);
       throw err;
     }
   }

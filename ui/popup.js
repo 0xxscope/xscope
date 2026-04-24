@@ -5,9 +5,19 @@ const resultsDiv = document.getElementById('results');
 const statusBar = document.getElementById('status-bar');
 
 const searchIconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
-let currentLang = localStorage.getItem('clawalpha_lang') || 'en';
-let currentSearchType = localStorage.getItem('clawalpha_search_type') || 'Top';
-chrome.storage.local.set({ clawalpha_search_type: currentSearchType });
+
+let currentSearchType = 'Top';
+
+// Initialize: load settings from storage
+chrome.storage.local.get({
+  clawalpha_search_type: 'Top',
+  clawalpha_lang: 'en'
+}, (items) => {
+  currentSearchType = items.clawalpha_search_type;
+  window.currentLang = items.clawalpha_lang;
+  if (selectType) selectType.value = currentSearchType;
+  updateUI();
+});
 
 function updateUI() {
   const langSwitch = document.getElementById('lang-switch');
@@ -31,10 +41,10 @@ function updateUI() {
   if (settingTitle) settingTitle.textContent = I18N[currentLang].systemSettings;
   const settingMaxTweetsLabel = document.getElementById('setting-max-tweets-label');
   if (settingMaxTweetsLabel) settingMaxTweetsLabel.textContent = I18N[currentLang].maxTweetsLimit;
-  
+
   const settingShowFloatingBtnLabel = document.getElementById('setting-show-floating-btn-label');
   if (settingShowFloatingBtnLabel) settingShowFloatingBtnLabel.textContent = I18N[currentLang].showFloatingBtn;
-  
+
   const settingCustomAiLabel = document.getElementById('setting-custom-ai-label');
   if (settingCustomAiLabel) settingCustomAiLabel.textContent = I18N[currentLang].customAiLabel;
   const settingApiUrlLabel = document.getElementById('setting-api-url-label');
@@ -54,18 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const langSwitch = document.getElementById('lang-switch');
   if (langSwitch) {
     langSwitch.addEventListener('change', (e) => {
-      currentLang = e.target.value;
-      localStorage.setItem('clawalpha_lang', currentLang);
-      chrome.storage.local.set({ clawalpha_lang: currentLang });
-      updateUI();
+      window.currentLang = e.target.value;
+      chrome.storage.local.set({ clawalpha_lang: window.currentLang }, () => {
+        updateUI();
+      });
     });
   }
   if (selectType) {
     selectType.value = currentSearchType;
     selectType.addEventListener('change', (e) => {
       currentSearchType = e.target.value;
-      localStorage.setItem('clawalpha_search_type', currentSearchType);
-      // 👇 新增这行，将下拉框的选择同步到全局存储，供 content.js 读取
       chrome.storage.local.set({ clawalpha_search_type: currentSearchType });
     });
   }
