@@ -227,7 +227,7 @@ async function startSearch(queryOverride = null, targetContainer = resultsDiv, s
     if (response && response.success && targetContainer) {
       if (scope === 'main') {
         statusBar.textContent = I18N[currentLang].foundCount(response.data.length);
-        setTimeout(() => { statusBar.style.display = 'none'; }, 3000);
+        // Removed timeout to keep 'foundCount' visible as requested
 
         // 👇 Notify AI scheduler, tweets are in place
         if (window.resolveMainTweets) window.resolveMainTweets(response.data);
