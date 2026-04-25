@@ -81,7 +81,7 @@ function openProfileModal(target) {
           <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${dataset.author || screenName}</div>
           <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>
         </div>
-        <a href="https://x.com/${screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <a href="https://x.com/${screenName}" target="_blank" title="Open in X" class="hover-opacity" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
         </a>
       </div>
@@ -126,7 +126,23 @@ function openProfileModal(target) {
       modalContainer.innerHTML = `<div class="empty" style="padding: 20px; text-align: center; color: var(--text-secondary);">${I18N[currentLang].noData || 'No recent tweets.'}</div>`;
     }
   }).catch(err => {
-    modalContainer.innerHTML = `<div class="error" style="padding: 20px; text-align: center; color: #f4212e;">Search failed.</div>`;
+    const errorMsg = err?.message || String(err);
+    if (errorMsg.includes("Please login") || errorMsg.includes("not logged in")) {
+      modalContainer.innerHTML = `
+        <div style="padding: 40px 20px; text-align: center;">
+          <div style="width: 48px; height: 48px; background: rgba(29, 155, 240, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div style="font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">${I18N[currentLang].notLoggedIn}</div>
+          <a href="https://x.com" target="_blank" style="display:inline-block; margin-top:12px; padding:8px 16px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-size:13px; font-weight:bold;">🔗 ${I18N[currentLang].goToLogin}</a>
+        </div>`;
+    } else {
+      modalContainer.innerHTML = `<div class="error" style="padding: 20px; text-align: center; color: #f4212e;">Search failed.</div>`;
+    }
   });
 }
 
@@ -232,10 +248,24 @@ function openRelationModal(userId, relationType) {
       } else {
         errorText = I18N[currentLang].loadFailed(response.error);
       }
-      modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
-           <div>${errorText}</div>
-           ${errorText === I18N[currentLang].notLoggedIn ? `<a href="https://x.com" target="_blank" style="display:inline-block; margin-top:16px; padding:8px 16px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-size:14px;">🔗 Go to login</a>` : ''}
-         </div>`;
+      if (errorText === I18N[currentLang].notLoggedIn) {
+        modalBody.innerHTML = `
+          <div style="padding: 60px 20px; text-align: center;">
+            <div style="width: 56px; height: 56px; background: rgba(29, 155, 240, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px;">${errorText}</div>
+            <a href="https://x.com" target="_blank" class="hover-scale" style="display:inline-block; margin-top:16px; padding:10px 24px; background:var(--text-primary); color:black; border-radius:9999px; text-decoration:none; font-weight:800; font-size:14px;">🔗 ${I18N[currentLang].goToLogin}</a>
+          </div>`;
+      } else {
+        modalBody.innerHTML += `<div style="color: #f4212e; text-align: center; padding: 40px 20px; font-weight: bold;">
+             <div>${errorText}</div>
+           </div>`;
+      }
     }
   }
   loadUsers();
@@ -529,7 +559,7 @@ function renderTokenCardUI(container, info) {
               <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); margin-bottom: 2px;">${escapeHtml(firstTweet?.author || handle)}</div>
               <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>
             </div>
-            <a href="https://x.com/${screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            <a href="https://x.com/${screenName}" target="_blank" title="Open in X" class="hover-opacity" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
           </div>

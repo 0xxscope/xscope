@@ -161,8 +161,14 @@ async function showMe() {
 
       statusBar.style.display = 'none';
     } else {
-      statusBar.textContent = response ? response.error : 'Failed to fetch user info';
-      setTimeout(() => { if (statusBar) statusBar.style.display = 'none'; }, 3000);
+      const errorMsg = response ? response.error : 'Failed to fetch user info';
+      if (errorMsg.includes("Please login") || errorMsg.includes("not logged in")) {
+        showNotLoggedInUI(resultsDiv);
+        statusBar.style.display = 'none';
+      } else {
+        statusBar.textContent = errorMsg;
+        setTimeout(() => { if (statusBar) statusBar.style.display = 'none'; }, 3000);
+      }
     }
   } catch (err) {
     console.error('showMe error', err);
@@ -172,6 +178,45 @@ async function showMe() {
     }
   }
 }
+
+function showNotLoggedInUI(container) {
+  if (!container) return;
+  const isZh = window.currentLang === 'zh';
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; height: 100%; box-sizing: border-box;">
+      <div style="width: 72px; height: 72px; background: rgba(29, 155, 240, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </div>
+      <div style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; line-height: 1.3;">
+        ${I18N[currentLang].notLoggedIn}
+      </div>
+      <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; max-width: 280px;">
+        ${I18N[currentLang].notLoggedInDesc}
+      </div>
+      <a href="https://x.com" target="_blank" style="
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        padding: 10px 24px; 
+        background: var(--text-primary); 
+        color: black; 
+        border-radius: 9999px; 
+        text-decoration: none; 
+        font-weight: 800; 
+        font-size: 14px;
+        transition: transform 0.2s, opacity 0.2s;
+      " class="hover-scale">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        ${I18N[currentLang].goToLogin}
+      </a>
+    </div>
+  `;
+}
+
 // Global variables for temporarily storing parallel data, facilitating AI analysis and Modal viewing
 let currentOfficialTweets = [];
 let currentTokenInfo = null;
@@ -257,7 +302,7 @@ chrome.runtime.onMessage.addListener((message) => {
             <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${screenName}</div>
             <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>
           </div>
-          <a href="https://x.com/${screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          <a href="https://x.com/${screenName}" target="_blank" title="Open in X" class="hover-opacity" style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none; transition: opacity 0.2s;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
         </div>
@@ -330,23 +375,11 @@ async function startSearch(queryOverride = null, targetContainer = resultsDiv, s
       if (scope === 'main') {
         if (window.resolveMainTweets) window.resolveMainTweets([]);
 
-        // 👇 NEW: Detect not logged in error and display eye-catching UI
         const errorMsg = (response && response.error) ? response.error : '';
-        if (errorMsg.includes("Please login")) {
-          // Status bar red prompt
-          statusBar.textContent = I18N[currentLang].notLoggedIn;
-          statusBar.style.color = '#f4212e';
-          statusBar.style.display = 'block';
-          // Restore colors after a few seconds to avoid affecting subsequent normal states
-          setTimeout(() => { statusBar.style.color = 'var(--accent-blue)'; }, 4000);
-
-          // Display large icon and jump button in the main content area
-          resultsDiv.innerHTML = `
-            <div class="empty" style="color:#f4212e; display:flex; flex-direction:column; align-items:center; gap:16px;">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-              <div>${I18N[currentLang].notLoggedIn}</div>
-              <a href="https://x.com" target="_blank" style="padding:10px 20px; background:var(--text-primary); color:black; border-radius:24px; text-decoration:none; font-weight:800; font-size:14px;">Go to X.com</a>
-            </div>`;
+        if (errorMsg.includes("Please login") || errorMsg.includes("not logged in")) {
+          showNotLoggedInUI(resultsDiv);
+          // Don't hide status bar or resultsDiv content
+          statusBar.style.display = 'none';
         } else {
           // Original network error fallback
           statusBar.textContent = I18N[currentLang].searchNetError;
