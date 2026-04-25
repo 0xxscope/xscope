@@ -11,12 +11,22 @@ let currentSearchType = 'Top';
 // Initialize: load settings from storage
 chrome.storage.local.get({
   clawalpha_search_type: 'Top',
-  clawalpha_lang: 'en'
+  clawalpha_lang: 'en',
+  clawalpha_first_open_shown: false
 }, (items) => {
   currentSearchType = items.clawalpha_search_type;
   window.currentLang = items.clawalpha_lang;
   if (selectType) selectType.value = currentSearchType;
   updateUI();
+
+  // Auto-show user info on first open
+  if (!items.clawalpha_first_open_shown) {
+    // Wait a bit for DOM animations/static UI to settle
+    setTimeout(() => {
+      showMe();
+      chrome.storage.local.set({ clawalpha_first_open_shown: true });
+    }, 500);
+  }
 });
 
 function updateUI() {
@@ -58,6 +68,9 @@ function updateUI() {
   if (settingPromptLabel) settingPromptLabel.textContent = I18N[currentLang].aiPromptTemplate;
   const settingSaveBtn = document.getElementById('setting-save-btn');
   if (settingSaveBtn) settingSaveBtn.textContent = I18N[currentLang].saveSettings;
+
+  const btnHomeText = document.getElementById('btn-home-text');
+  if (btnHomeText) btnHomeText.textContent = I18N[currentLang].home;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -78,7 +91,87 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   updateUI();
+
+  const btnHome = document.getElementById('btn-home');
+  if (btnHome) {
+    btnHome.addEventListener('click', () => showMe());
+  }
 });
+
+async function showMe() {
+  if (!statusBar || !resultsDiv) return;
+
+  // Show loading status
+  statusBar.style.display = 'block';
+  statusBar.textContent = I18N[currentLang].loading;
+  resultsDiv.innerHTML = ''; // Clear main area
+
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_ME' });
+    if (response && response.success) {
+      const u = response.data;
+
+      const followersVal = formatNumber(u.followersCount);
+      const followingVal = formatNumber(u.followingCount);
+      const avatarUrl = u.avatar || DEFAULT_AVATAR;
+
+      resultsDiv.innerHTML = `
+        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); background-color: rgba(29, 155, 240, 0.05);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <img src="${avatarUrl}" class="home-profile-avatar" 
+                 data-screenname="${escapeHtml(u.screenName)}" 
+                 data-author="${escapeHtml(u.name)}"
+                 data-userid="${u.id}"
+                 data-desc="${escapeHtml(u.desc)}"
+                 data-followers="${u.followersCount}"
+                 data-following="${u.followingCount}"
+                 data-location="${escapeHtml(u.location)}"
+                 style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
+            <div style="flex: 1;">
+              <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${escapeHtml(u.name)}</div>
+              <div style="color: var(--text-secondary); font-size: 15px;">@${escapeHtml(u.screenName)}</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <a href="https://x.com/${u.screenName}" target="_blank" title="Open in X" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--text-primary); color: var(--bg-primary); text-decoration: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+            </div>
+          </div>
+          ${u.desc ? `<div style="font-size: 14px; line-height: 1.5; color: var(--text-primary); margin-bottom: 12px;">${escapeHtml(u.desc)}</div>` : ''}
+          <div style="display: flex; gap: 16px; font-size: 14px;">
+            <div class="stat-clickable" data-userid="${u.id}" data-type="following" style="cursor: pointer;">
+              <span style="color: var(--text-primary); font-weight: 700;">${followingVal}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].following}</span>
+            </div>
+            <div class="stat-clickable" data-userid="${u.id}" data-type="followers" style="cursor: pointer;">
+              <span style="color: var(--text-primary); font-weight: 700;">${followersVal}</span> <span style="color: var(--text-secondary);">${I18N[currentLang].followers}</span>
+            </div>
+            ${u.location ? `<div style="color: var(--text-secondary);">📍 ${escapeHtml(u.location)}</div>` : ''}
+          </div>
+        </div>
+        <div id="home-tweets-container"></div>
+      `;
+
+      chrome.runtime.sendMessage({
+        type: 'SEARCH',
+        query: `from:${u.screenName}`,
+        product: 'Latest',
+        scope: 'home',
+        maxTweets: 40
+      });
+
+      statusBar.style.display = 'none';
+    } else {
+      statusBar.textContent = response ? response.error : 'Failed to fetch user info';
+      setTimeout(() => { if (statusBar) statusBar.style.display = 'none'; }, 3000);
+    }
+  } catch (err) {
+    console.error('showMe error', err);
+    if (statusBar) {
+      statusBar.textContent = 'Error';
+      setTimeout(() => { statusBar.style.display = 'none'; }, 3000);
+    }
+  }
+}
 // Global variables for temporarily storing parallel data, facilitating AI analysis and Modal viewing
 let currentOfficialTweets = [];
 let currentTokenInfo = null;
@@ -136,7 +229,8 @@ inputQuery.addEventListener('keypress', (e) => { if (e.key === 'Enter') startSea
 // 👇 When listening to messages, render to the correct location based on scope
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'SEARCH_CHUNK') {
-    const container = message.scope === 'modal' ? document.getElementById('modal-tweets-container') : resultsDiv;
+    const container = message.scope === 'modal' ? document.getElementById('modal-tweets-container') :
+      (message.scope === 'home' ? document.getElementById('home-tweets-container') : resultsDiv);
     if (container) {
       renderTweets(message.data, container);
       if (message.scope === 'main') {
@@ -158,7 +252,7 @@ chrome.runtime.onMessage.addListener((message) => {
     modalBody.innerHTML = `
       <div style="padding: 16px; border-bottom: 1px solid var(--border-color); background-color: rgba(29, 155, 240, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <img src="${DEFAULT_AVATAR}" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
+          <img src="${DEFAULT_AVATAR}" class="avatar" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
           <div style="flex: 1;">
             <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.2;">${screenName}</div>
             <div style="color: var(--text-secondary); font-size: 15px;">@${screenName}</div>

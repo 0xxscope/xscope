@@ -57,6 +57,20 @@ const SEARCH_FEATURES = {
   "responsive_web_enhance_cards_enabled": false
 };
 
+const VIEWER_FEATURES = {
+  "hidden_profile_likes_enabled": true,
+  "hidden_profile_subscriptions_enabled": true,
+  "responsive_web_graphql_exclude_directive_enabled": true,
+  "verified_phone_label_enabled": false,
+  "subscriptions_verification_info_is_identity_verified_enabled": true,
+  "subscriptions_verification_info_verified_since_enabled": true,
+  "highlights_tweets_tab_ui_enabled": true,
+  "responsive_web_twitter_article_notes_tab_enabled": false,
+  "creator_subscriptions_tweet_preview_api_enabled": true,
+  "responsive_web_graphql_skip_user_profile_image_extensions_enabled": false,
+  "responsive_web_graphql_timeline_navigation_enabled": true
+};
+
 function getUuid() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -129,6 +143,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
+  // 👇 New listener for fetching current user info
+  if (request.type === 'GET_ME') {
+    fetchMe().then(sendResponse);
+    return true;
+  }
+
   // 👇 New listener for fetching token info (DexScreener)
   if (request.type === 'GET_TOKEN_INFO') {
     TOKEN_SERVICE.getTokenInfo(request.address).then(info => {
@@ -181,6 +201,85 @@ async function getCookies() {
   const ct0 = await chrome.cookies.get({ url: "https://x.com", name: "ct0" });
   if (!ct0) throw new Error("Please login to X.com first");
   return ct0.value;
+}
+
+async function fetchMe() {
+  try {
+    const ct0 = await getCookies();
+
+    // Use GraphQL Viewer query (more robust, same as birdnode)
+    const queryId = '_8ClT24oZ8tpylf_OSuNdg';
+    const variables = { withCommunitiesMemberships: true };
+    const urlParams = new URLSearchParams({
+      variables: JSON.stringify(variables),
+      features: JSON.stringify(VIEWER_FEATURES)
+    });
+    const url = `https://x.com/i/api/graphql/${queryId}/Viewer?${urlParams.toString()}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'authorization': BEARER_TOKEN,
+        'x-csrf-token': ct0,
+        'content-type': 'application/json',
+        'x-twitter-auth-type': 'OAuth2Session',
+        'x-twitter-active-user': 'yes'
+      }
+    });
+
+    if (!response.ok) {
+      // Fallback to legacy v1.1 if GraphQL fails (unlikely but safe)
+      const legacyUrl = `https://x.com/i/api/1.1/account/verify_credentials.json`;
+      const legacyResp = await fetch(legacyUrl, {
+        method: 'GET',
+        headers: {
+          'authorization': BEARER_TOKEN,
+          'x-csrf-token': ct0,
+          'x-twitter-auth-type': 'OAuth2Session',
+          'x-twitter-active-user': 'yes'
+        }
+      });
+      if (!legacyResp.ok) return { success: false, error: `HTTP ${legacyResp.status}` };
+      const u = await legacyResp.json();
+      return {
+        success: true,
+        data: {
+          id: u.id_str || String(u.id),
+          name: u.name,
+          screenName: u.screen_name,
+          avatar: u.profile_image_url_https,
+          desc: u.description || '',
+          followersCount: u.followers_count || 0,
+          followingCount: u.friends_count || 0,
+          location: u.location || ''
+        }
+      };
+    }
+
+    const data = await response.json();
+    const userResult = data.data?.viewer?.user_results?.result;
+    if (!userResult) throw new Error("No user result in Viewer query");
+
+    const user = userResult.user || userResult;
+    const legacy = user.legacy || {};
+    const core = user.core || {};
+
+    return {
+      success: true,
+      data: {
+        id: user.rest_id,
+        name: core.name || legacy.name,
+        screenName: core.screen_name || legacy.screen_name,
+        avatar: legacy.profile_image_url_https || user.avatar?.image_url,
+        desc: legacy.description || '',
+        followersCount: legacy.followers_count || 0,
+        followingCount: legacy.friends_count || 0,
+        location: legacy.location || ''
+      }
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 }
 
 // Auto loop search

@@ -384,8 +384,8 @@ async function generateAiSummary(query, container) {
       // Add fault-tolerant matching: ensure addresses match (case-insensitive and trimmed)
       const targetAddress = String(query).toLowerCase().trim();
       const incomingAddress = String(msg.address || '').toLowerCase().trim();
-      
-      if (incomingAddress !== targetAddress) return; 
+
+      if (incomingAddress !== targetAddress) return;
 
       if (msg.type === 'AI_ANALYZE_CHUNK') {
         accumulatedText += (msg.data || '');
@@ -394,7 +394,7 @@ async function generateAiSummary(query, container) {
           .replace(/\*\*(.+?)\*\*/g, '$1')
           .replace(/\*(.+?)\*/g, '$1')
           .replace(/^#{1,6}\s*/gm, '');
-          
+
         if (contentDiv && cleaned) {
           contentDiv.innerHTML = cleaned;
         }
@@ -402,11 +402,11 @@ async function generateAiSummary(query, container) {
       else if (msg.type === 'AI_ANALYZE_DONE') {
         // 【Fallback】If accumulatedText is still empty on completion, use the full result
         if (!accumulatedText && msg.data && msg.data.result) {
-           const finalCleaned = msg.data.result
+          const finalCleaned = msg.data.result
             .replace(/\*\*(.+?)\*\*/g, '$1')
             .replace(/\*(.+?)\*/g, '$1')
             .replace(/^#{1,6}\s*/gm, '');
-           if (contentDiv) contentDiv.innerHTML = finalCleaned;
+          if (contentDiv) contentDiv.innerHTML = finalCleaned;
         }
         chrome.runtime.onMessage.removeListener(aiStreamListener); // Release listener
         clearTimeout(aiTimeoutId);
@@ -716,9 +716,10 @@ function loadSettings() {
   });
 }
 
-// Click Logo to open settings
-if (appLogo) {
-  appLogo.addEventListener('click', () => {
+// Click Settings Icon to open settings
+const btnSettings = document.getElementById('btn-settings');
+if (btnSettings) {
+  btnSettings.addEventListener('click', () => {
     loadSettings();
     settingsModal.style.display = 'flex';
   });
