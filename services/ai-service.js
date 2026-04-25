@@ -40,9 +40,9 @@ const AI_SERVICE = {
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90000);
-      const res = await fetch(apiUrl, { 
+      const res = await fetch(apiUrl, {
         method: 'POST', headers, body: JSON.stringify(requestBody),
-        signal: controller.signal 
+        signal: controller.signal
       });
       clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`AI API error: ${res.status}`);

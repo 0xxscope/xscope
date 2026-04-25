@@ -142,7 +142,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'AI_ANALYZE') {
     const targetAddr = request.payload.address;
     sendResponse({ success: true, started: true });  // Send ack first
-    
+
     setTimeout(() => {  // Delay 50ms to allow frontend listener to mount
       chrome.storage.local.get({ clawalpha_lang: 'en' }, (items) => {
         const payload = { ...request.payload };
